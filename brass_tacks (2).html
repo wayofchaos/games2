@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B1B15">
+
+<title>Brass Tacks — a budget game</title>
+<style>
+:root{ --felt:#10261D; --felt2:#0B1B15; --paper:#F2EBD8; --paper2:#E9DFC6; --ink:#20211C;
+  --red:#B3261E; --brass:#C8A24A; --pencil:#8FA396; --good:#3E7C5B; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0; background:radial-gradient(1200px 600px at 50% -100px, #16352A, var(--felt) 60%, var(--felt2));
+  color:var(--paper); font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; min-height:100%;}
+button{font:inherit; cursor:pointer; border:none; border-radius:5px;}
+button,select,input,textarea{touch-action:manipulation}
+.cap{font-family:'Copperplate','Copperplate Gothic Light',Georgia,serif; letter-spacing:.1em;}
+.mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace; font-variant-numeric:tabular-nums;}
+header{position:sticky; top:0; z-index:40; background:linear-gradient(var(--felt2) 75%, transparent); padding:10px 14px 4px;}
+.strip{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+.brand{font-size:15px; color:var(--paper);} .brand b{color:var(--brass);}
+.meters{margin-left:auto; display:flex; gap:14px; font-size:12px; color:var(--pencil);}
+.meters .v{color:var(--paper)}
+.tray{max-width:1100px; margin:8px auto 0; background:#0d211a; border:1px solid #0008; border-radius:8px;
+  padding:10px 12px; display:flex; align-items:center; gap:10px; position:relative; overflow:hidden;}
+.tray .lbl{font-size:11px; color:var(--pencil);}
+.tray .amt{font-size:24px; color:var(--brass);}
+.tray .amt.zero{color:var(--good)}
+.tray button{margin-left:auto; background:var(--brass); color:#241c08; padding:11px 16px;}
+.stamp{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;
+  font-size:20px; color:var(--good); border:3px double var(--good); border-radius:8px; margin:4px;
+  transform:rotate(-7deg) scale(1.6); opacity:0; transition:all .45s ease-out; background:#0d211acc;}
+.stamp.show{opacity:1; transform:rotate(-7deg) scale(1);}
+@media(prefers-reduced-motion:reduce){.stamp{transition:opacity .2s}}
+.wrap{display:grid; grid-template-columns:1fr; gap:14px; padding:12px 14px 110px; max-width:1100px; margin:0 auto;}
+@media(min-width:920px){ .wrap{grid-template-columns:1fr 300px; align-items:start;} }
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(165px,1fr)); gap:10px;}
+.env{position:relative; background:linear-gradient(var(--paper),var(--paper2)); color:var(--ink);
+  border-radius:6px; padding:34px 12px 12px; text-align:left; border:1px solid #0005; width:100%;}
+.env::before{content:''; position:absolute; left:0; right:0; top:0; height:26px;
+  background:linear-gradient(#00000014,#0000); border-bottom:1px dashed #00000033;
+  clip-path:polygon(0 0,100% 0,100% 100%,50% 55%,0 100%);}
+.env .nm{font-size:13px; color:#4a4636; margin-bottom:2px;}
+.env .rem{font-size:21px;}
+.env .sub{font-size:10.5px; color:#6e6750;}
+.env .fill{height:5px; background:#00000018; border-radius:3px; margin-top:8px; overflow:hidden;}
+.env .fill i{display:block; height:100%; background:var(--good);}
+.env.save .nm::after{content:' ◆'; color:var(--brass);}
+.env.ovr{outline:2px solid var(--red);}
+.env.ovr .rem{color:var(--red);}
+.env.ovr::after{content:'OVERDRAWN'; position:absolute; top:34px; right:8px; color:var(--red);
+  border:2px solid var(--red); border-radius:4px; padding:1px 6px; font-size:10px; transform:rotate(8deg); opacity:.85;}
+.addenv{background:#0d211a; color:var(--pencil); border:1px dashed #ffffff33; border-radius:6px; min-height:96px; font-size:13px;}
+.rail{display:flex; flex-direction:column; gap:12px;}
+.panel{background:#0d211a; border:1px solid #0008; border-radius:8px; padding:12px;}
+.panel h3{margin:0 0 8px; font-size:11px; color:var(--pencil); letter-spacing:.12em;}
+.bignum{font-size:22px; color:var(--paper);}
+.panel .note{font-size:11.5px; color:var(--pencil); margin-top:4px;}
+.row2{display:flex; justify-content:space-between; font-size:12.5px; color:var(--pencil); padding:3px 0;}
+.row2 .v{color:var(--paper)}
+.ach{display:flex; flex-wrap:wrap; gap:6px;}
+.ach span{font-size:10.5px; padding:4px 8px; border-radius:10px; background:#152e24; color:var(--pencil); border:1px solid #0006;}
+.ach span.got{color:#241c08; background:var(--brass);}
+.foot{position:fixed; left:0; right:0; bottom:0; z-index:50; background:linear-gradient(transparent,var(--felt2) 35%);
+  padding:10px 14px calc(12px + env(safe-area-inset-bottom));}
+.logbar{max-width:1100px; margin:0 auto; display:flex; gap:6px;}
+.logbar select,.logbar input{background:#10261d; border:1px solid #0008; color:var(--paper); padding:12px 8px; border-radius:5px; font:inherit; min-width:0;}
+.logbar select{flex:0 1 130px} .logbar .amt{flex:0 1 96px} .logbar .nt{flex:1 1 80px}
+.logbar button{background:var(--red); color:var(--paper); padding:0 16px;}
+.toast{position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:80; background:var(--brass); color:#241c08;
+  padding:10px 16px; border-radius:5px; font-size:14px; box-shadow:0 6px 24px #000a; opacity:0; pointer-events:none; transition:opacity .3s; max-width:90vw;}
+.toast.show{opacity:1}
+.banner{display:none; background:#3a2c20; color:var(--paper); font-size:12.5px; padding:8px 12px; border-radius:5px; margin:8px auto 0; max-width:1100px;}
+.modal{position:fixed; inset:0; background:#000a; z-index:90; display:none; align-items:center; justify-content:center; padding:18px;}
+.modal.show{display:flex}
+.box{background:#13271f; border:1px solid #0009; border-radius:8px; padding:18px; max-width:430px; width:100%;}
+.box h3{margin:0 0 4px; color:var(--paper); font-size:16px;}
+.box p{font-size:12.5px; color:var(--pencil); margin:4px 0 12px;}
+.box input{width:100%; padding:11px; font:inherit; background:#0d211a; color:var(--paper); border:1px solid #0008; border-radius:5px; margin-bottom:8px;}
+.box .row{display:flex; gap:8px; flex-wrap:wrap;}
+.box .row button{flex:1; padding:11px; background:#1d3a2d; color:var(--paper);}
+.box .row button.primary{background:var(--brass); color:#241c08;}
+.box .row button.danger{background:var(--red);}
+.box .sep{border:none; border-top:1px dashed #ffffff22; margin:12px 0;}
+.loading{padding:60px 20px; text-align:center; color:var(--pencil); font-style:italic;}
+</style>
+</head>
+<body>
+<header>
+  <div class="strip">
+    <div class="brand cap"><b>BRASS TACKS</b> · a budget game</div>
+    <div class="meters"><span class="cap" id="rank">—</span><span>streak <span class="v" id="streak">0</span>d</span><span><span class="v" id="xp">0</span> pts</span></div>
+  </div>
+  <div class="tray">
+    <div><div class="lbl cap">TO ASSIGN — idle dollars</div><div class="amt mono" id="tray">$0.00</div></div>
+    <button class="cap" id="payday">PAYDAY</button>
+    <div class="stamp cap" id="stamp">EVERY DOLLAR EMPLOYED</div>
+  </div>
+  <div class="banner" id="banner"></div>
+</header>
+
+<div class="wrap" id="app"><div class="loading">opening the ledger…</div></div>
+
+<div class="foot"><div class="logbar">
+  <select id="logEnv"></select>
+  <input class="amt mono" id="logAmt" inputmode="decimal" placeholder="$0.00">
+  <input class="nt" id="logNote" placeholder="note (optional)" maxlength="40">
+  <button class="cap" id="logGo">SPEND</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="envModal"><div class="box">
+  <h3 id="emName">Envelope</h3>
+  <p id="emInfo"></p>
+  <input class="mono" id="emAmt" inputmode="decimal" placeholder="$ amount">
+  <div class="row">
+    <button id="emAssign" class="primary">Assign from tray</button>
+    <button id="emUnassign">Return to tray</button>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <button id="emCover">Cover deficit from…</button>
+  </div>
+  <hr class="sep">
+  <div class="row">
+    <button id="emRename">Rename</button>
+    <button id="emDelete" class="danger">Delete</button>
+    <button id="emClose">Done</button>
+  </div>
+</div></div>
+
+<div class="modal" id="coverModal"><div class="box">
+  <h3>Cover from…</h3>
+  <p>Money doesn’t appear; it moves. Pick the envelope that pays for this one — that’s the trade.</p>
+  <div id="coverList"></div>
+  <div class="row" style="margin-top:10px"><button id="coverCancel">Cancel</button></div>
+</div></div>
+
+<div class="modal" id="closeModal"><div class="box">
+  <h3 class="cap">Close the month</h3>
+  <p id="closeInfo"></p>
+  <div class="row">
+    <button id="closeSweep" class="primary">Sweep leftovers to Buffer</button>
+    <button id="closeKeep">Keep in envelopes</button>
+  </div>
+  <div class="row" style="margin-top:8px"><button id="closeCancel">Cancel</button></div>
+</div></div>
+
+<div class="modal" id="shModal"><div class="box">
+<h3>Export</h3><p id="shMsg" style="font-size:12.5px"></p>
+<textarea id="shText" readonly style="width:100%;min-height:170px;background:#101418;color:#e8e8e8;border:1px solid #0008;border-radius:5px;padding:10px;font-family:ui-monospace,Menlo,monospace;font-size:12px"></textarea>
+<div style="display:flex;gap:8px;margin-top:10px"><button id="shCopy" style="flex:1;padding:11px;background:#cfcfcf;color:#222;border-radius:5px">Copy</button><button id="shClose" style="flex:1;padding:11px;background:#3a3a3a;color:#ddd;border-radius:5px">Close</button></div>
+</div></div>
+<div class="modal" id="askModal"><div class="box">
+<h3 id="askTitle">Question</h3>
+<input id="askInput" style="width:100%;padding:12px;font:inherit;font-size:16px;background:#101418;color:#eee;border:1px solid #0008;border-radius:5px;margin-bottom:10px">
+<div style="display:flex;gap:8px"><button id="askGo" style="flex:1;padding:11px;background:#cfcfcf;color:#222;border-radius:5px">OK</button><button id="askCancel" style="flex:1;padding:11px;background:#3a3a3a;color:#ddd;border-radius:5px">Cancel</button></div>
+</div></div>
+<script>
+/* ---------- money: integer cents ---------- */
+const C = v => { const n = Math.round(parseFloat(String(v).replace(/[^0-9.\-]/g,''))*100); return isFinite(n)? n : 0; };
+const $$ = c => (c<0?'-':'')+'$'+(Math.abs(c)/100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+
+/* ---------- storage: claude -> localStorage -> memory ---------- */
+let mem={};
+const HASC = typeof window!=='undefined' && !!window.storage;
+const HASLS = (()=>{ if(HASC) return false; try{ localStorage.setItem('__bt','1'); localStorage.removeItem('__bt'); return true; }catch(e){ return false; } })();
+const store={
+ async get(k){ if(HASC){ try{ const r=await window.storage.get(k); return r?r.value:null; }catch(e){ return null; } }
+   if(HASLS) return localStorage.getItem(k); return (k in mem)?mem[k]:null; },
+ async set(k,v){ if(HASC){ try{ const r=await window.storage.set(k,v); if(r) return true; }catch(e){} }
+   if(HASLS){ try{ localStorage.setItem(k,v); return true; }catch(e){} }
+   mem[k]=v; const b=document.getElementById('banner'); b.style.display='block';
+   b.textContent='No storage available here (private browsing?). Back up before you leave the table.'; return false; }
+};
+
+/* ---------- state ---------- */
+let S = { meta:{xp:0, streak:0, lastDay:'', ach:{}, stamped:false},
+  month:{income:0, tray:0},
+  env:[ {id:'rent',n:'Rent',a:0,s:0,c:0},{id:'groc',n:'Groceries',a:0,s:0,c:0},
+        {id:'tran',n:'Transport',a:0,s:0,c:0},{id:'fun',n:'Fun',a:0,s:0,c:0},
+        {id:'fy',n:'Future You',a:0,s:0,c:0,save:1},{id:'buf',n:'Buffer',a:0,s:0,c:0,buf:1} ],
+  hist:[], log:[] };
+const RANKS=[[0,'Pencil Sharpener'],[40,'Teller'],[120,'Bookkeeper'],[300,'Comptroller'],[700,'The Green Visor']];
+const ACH=[['entry','FIRST ENTRY','log an expense'],
+ ['employed','EVERY DOLLAR EMPLOYED','assign the whole tray to zero'],
+ ['dibs','FIRST DIBS','Future You funded when the tray zeroes'],
+ ['rainy','RAINY DAY','buffer covers 1 month of spending'],
+ ['deep','THREE MONTHS DEEP','3 months of runway'],
+ ['clean','CLEAN CLOSE','close a month with no red ink'],
+ ['sweep','THE SWEEP','sweep leftovers into the buffer'],
+ ['habit','HABIT','7-day logging streak']];
+let saveTm=null, curEnv=null;
+const $=id=>document.getElementById(id);
+const uid=()=>Math.random().toString(36).slice(2,8);
+const today=()=>new Date().toISOString().slice(0,10);
+function persist(){ clearTimeout(saveTm); saveTm=setTimeout(()=>store.set('bt:state', JSON.stringify(S)), 450); }
+const rem = e => e.c + e.a - e.s;
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2400); }
+function award(id,name){ if(S.meta.ach[id]) return; S.meta.ach[id]=1; persist(); toast('Achievement — '+name); }
+function rank(){ let r=RANKS[0][1]; for(const [th,n] of RANKS) if(S.meta.xp>=th) r=n; return r; }
+function avgSpend(){ const hs=S.hist.slice(-6); if(!hs.length) return null;
+  return Math.round(hs.reduce((s,h)=>s+h.spent,0)/hs.length); }
+function runway(){ const a=avgSpend(); const b=S.env.find(e=>e.buf); if(!a||a<=0||!b) return null; return rem(b)/a; }
+
+/* ---------- core moves ---------- */
+function payday(){ ask('Payday \u2014 how much landed?', '', 'decimal', v=>{ const c=C(v); if(c<=0) return;
+ S.month.income+=c; S.month.tray+=c; S.meta.stamped=false; persist(); render();
+ toast($$(c)+' on the table. Idle dollars are the enemy \u2014 give them jobs.'); }); }
+function assign(e, c){ if(c<=0) return;
+ const amt=Math.min(c, S.month.tray); if(amt<=0){ toast('The tray is empty.'); return; }
+ e.a+=amt; S.month.tray-=amt; checkStamp(); persist(); render(); }
+function unassign(e, c){ if(c<=0) return;
+ const amt=Math.min(c, e.a); if(amt<=0){ toast('Nothing assigned to return.'); return; }
+ e.a-=amt; S.month.tray+=amt; S.meta.stamped=false; persist(); render(); }
+function checkStamp(){
+ if(S.month.income>0 && S.month.tray===0 && !S.meta.stamped){
+   S.meta.stamped=true; S.meta.xp+=5;
+   const st=$('stamp'); st.classList.add('show'); setTimeout(()=>st.classList.remove('show'), 2200);
+   award('employed','EVERY DOLLAR EMPLOYED');
+   const fy=S.env.find(e=>e.save); if(fy && fy.a>0) award('dibs','FIRST DIBS');
+ } }
+function spend(envId, c, note){
+ const e=S.env.find(x=>x.id===envId); if(!e || c<=0) return;
+ e.s+=c; S.log.push({d:today(), id:envId, amt:c, note:note||''}); if(S.log.length>500) S.log.shift();
+ S.meta.xp+=1;
+ const d=today();
+ if(S.meta.lastDay!==d){ const y=new Date(Date.now()-86400000).toISOString().slice(0,10);
+   S.meta.streak=(S.meta.lastDay===y)? S.meta.streak+1 : 1; S.meta.lastDay=d; }
+ award('entry','FIRST ENTRY');
+ if(S.meta.streak>=7) award('habit','HABIT');
+ if(rem(e)<0) toast('Red ink in '+e.n+'. Cover it from another envelope — that\u2019s the trade.');
+ else toast($$(c)+' from '+e.n+'. '+$$(rem(e))+' left.');
+ persist(); render(); }
+function coverFrom(toE, fromE){
+ const deficit=-rem(toE); if(deficit<=0) return;
+ const amt=Math.min(deficit, Math.max(0, rem(fromE)));
+ if(amt<=0){ toast(fromE.n+' has nothing to give.'); return; }
+ const fromA=Math.min(amt, fromE.a);
+ fromE.a-=fromA; fromE.c-=(amt-fromA);
+ toE.a+=amt;
+ toast('Covered '+$$(amt)+' from '+fromE.n+' \u2014 that\u2019s the trade.');
+ persist(); render(); }
+function closeMonth(sweep){
+ const buf=S.env.find(e=>e.buf);
+ let overdrawn=S.env.filter(e=>rem(e)<0).length;
+ if(sweep && buf){ S.env.forEach(e=>{ if(!e.buf && !e.save){ const r=rem(e); if(r>0){ buf.c+=r; e.c=-(e.a-e.s); } } });
+   award('sweep','THE SWEEP'); }
+ const saved=S.env.filter(e=>e.save||e.buf).reduce((s,e)=>s+e.a,0);
+ S.hist.push({ym:today().slice(0,7), income:S.month.income,
+   assigned:S.env.reduce((s,e)=>s+e.a,0), spent:S.env.reduce((s,e)=>s+e.s,0),
+   saved, ovr:overdrawn});
+ if(S.hist.length>24) S.hist.shift();
+ S.meta.xp+=10; if(overdrawn===0) award('clean','CLEAN CLOSE');
+ S.env.forEach(e=>{ e.c=rem(e); e.a=0; e.s=0; });
+ S.month={income:0, tray:S.month.tray}; S.meta.stamped=false;
+ const r=runway(); if(r!==null && r>=1) award('rainy','RAINY DAY');
+ if(r!==null && r>=3) award('deep','THREE MONTHS DEEP');
+ persist(); render(); toast('Month closed. The books are square.'); }
+
+/* ---------- render ---------- */
+function render(){
+ $('rank').textContent=rank(); $('streak').textContent=S.meta.streak; $('xp').textContent=S.meta.xp;
+ const tr=$('tray'); tr.textContent=$$(S.month.tray);
+ tr.classList.toggle('zero', S.month.income>0 && S.month.tray===0);
+
+ const sel=$('logEnv'); sel.innerHTML=S.env.map(e=>'<option value="'+e.id+'">'+e.n+'</option>').join('');
+
+ const app=$('app'); app.innerHTML='';
+ const grid=document.createElement('div'); grid.className='grid';
+ S.env.forEach(e=>{
+   const r=rem(e), budget=e.c+e.a;
+   const b=document.createElement('button');
+   b.className='env'+(e.save||e.buf?' save':'')+(r<0?' ovr':'');
+   b.innerHTML='<div class="nm cap">'+e.n+'</div><div class="rem mono">'+$$(r)+'</div>'+
+     '<div class="sub mono">'+$$(e.s)+' spent of '+$$(budget)+'</div>'+
+     '<div class="fill"><i style="width:'+(budget>0? Math.max(0,Math.min(100,100*r/budget)) : 0)+'%;'+(r<0?'background:var(--red)':'')+'"></i></div>';
+   b.onclick=()=>openEnv(e.id);
+   grid.appendChild(b); });
+ const ae=document.createElement('button'); ae.className='addenv'; ae.textContent='+ new envelope';
+ ae.onclick=()=>{ ask('Envelope name?', '', 'text', n=>{ if(n&&n.trim()){ S.env.push({id:uid(),n:n.trim().slice(0,18),a:0,s:0,c:0}); persist(); render(); } }); };
+ grid.appendChild(ae);
+ app.appendChild(grid);
+
+ const rail=document.createElement('div'); rail.className='rail';
+ const r=runway(); const a=avgSpend();
+ const spentM=S.env.reduce((s,e)=>s+e.s,0);
+ const savedM=S.env.filter(e=>e.save||e.buf).reduce((s,e)=>s+e.a,0);
+ const rate=S.month.income>0? Math.round(100*savedM/S.month.income) : null;
+ rail.innerHTML='<div class="panel"><h3 class="cap">RUNWAY</h3>'+
+   '<div class="bignum mono">'+(r===null? '—' : r.toFixed(1)+' months')+'</div>'+
+   '<div class="note">'+(r===null? 'Close a month to learn your burn rate.' : 'Buffer \u00F7 average month ('+$$(a)+'). The only number that buys calm.')+'</div></div>'+
+   '<div class="panel"><h3 class="cap">THIS MONTH</h3>'+
+   '<div class="row2"><span>income</span><span class="v mono">'+$$(S.month.income)+'</span></div>'+
+   '<div class="row2"><span>spent</span><span class="v mono">'+$$(spentM)+'</span></div>'+
+   '<div class="row2"><span>to Future You + Buffer</span><span class="v mono">'+$$(savedM)+(rate===null?'':' ('+rate+'%)')+'</span></div>'+
+   (S.hist.length? '<div class="note">last close: spent '+$$(S.hist[S.hist.length-1].spent)+' \u00B7 saved '+$$(S.hist[S.hist.length-1].saved)+'</div>':'')+
+   '<div class="row" style="display:flex;gap:8px;margin-top:10px">'+
+   '<button id="closeBtn" style="flex:1;background:#1d3a2d;color:var(--paper);padding:10px" class="cap">CLOSE MONTH</button>'+
+   '<button id="reportBtn" style="flex:1;background:var(--brass);color:#241c08;padding:10px" class="cap">STATEMENT</button></div>'+
+   '<div class="row" style="display:flex;gap:8px;margin-top:8px">'+
+   '<button id="bk" style="flex:1;background:#152e24;color:var(--pencil);padding:9px">Back up</button>'+
+   '<button id="rs" style="flex:1;background:#152e24;color:var(--pencil);padding:9px">Restore</button>'+
+   '<input type="file" id="rsFile" accept=".json,application/json" style="display:none"></div></div>'+
+   '<div class="panel"><h3 class="cap">ACHIEVEMENTS</h3><div class="ach">'+
+   ACH.map(([id,n,d])=>'<span class="'+(S.meta.ach[id]?'got':'')+'" title="'+d+'">'+n+'</span>').join('')+'</div>'+
+   '<div class="note">Data lives only in your storage here — nowhere else. This is a discipline tool, not financial advice.</div></div>';
+ app.appendChild(rail);
+ $('closeBtn').onclick=()=>{ $('closeInfo').textContent='Squares the books: rolls leftovers forward, logs the month, resets the spent column. '+
+   (S.env.some(e=>rem(e)<0)? 'Warning: red ink is open — cover it first for a CLEAN CLOSE.' : 'No red ink open. This would be a clean close.');
+   $('closeModal').classList.add('show'); };
+ $('reportBtn').onclick=statement;
+ $('bk').onclick=()=>{ try{ const aEl=document.createElement('a');
+   aEl.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));
+   aEl.download='brass_tacks_save.json'; aEl.click(); toast('Books backed up.'); }catch(e){ toast('Backup failed.'); } };
+ $('rs').onclick=()=>$('rsFile').click();
+ $('rsFile').onchange=async ev=>{ const f=ev.target.files[0]; if(!f) return;
+   try{ const j=JSON.parse(await f.text()); if(j.env && j.meta){ S=j; await store.set('bt:state', JSON.stringify(S)); render(); toast('Books restored.'); }
+     else toast('Not a Brass Tacks save.'); }catch(e){ toast('Could not read that file.'); } };
+}
+
+/* ---------- envelope modal ---------- */
+function openEnv(id){ curEnv=S.env.find(e=>e.id===id); if(!curEnv) return;
+ $('emName').textContent=curEnv.n;
+ $('emInfo').textContent=$$(rem(curEnv))+' available \u00B7 '+$$(curEnv.s)+' spent \u00B7 tray holds '+$$(S.month.tray);
+ $('emAmt').value=''; $('emCover').style.display = rem(curEnv)<0? 'block':'none';
+ $('envModal').classList.add('show'); }
+$('emClose').onclick=()=>$('envModal').classList.remove('show');
+$('emAssign').onclick=()=>{ assign(curEnv, C($('emAmt').value)||S.month.tray); openEnv(curEnv.id); };
+$('emUnassign').onclick=()=>{ unassign(curEnv, C($('emAmt').value)||curEnv.a); openEnv(curEnv.id); };
+$('emRename').onclick=()=>{ $('envModal').classList.remove('show'); ask('New name?', curEnv.n, 'text', n=>{ if(n&&n.trim()){ curEnv.n=n.trim().slice(0,18); persist(); render(); } openEnv(curEnv.id); }); };
+$('emDelete').onclick=()=>{ if(rem(curEnv)!==0){ toast('Empty it first — money doesn\u2019t vanish.'); return; }
+ S.env=S.env.filter(e=>e.id!==curEnv.id); $('envModal').classList.remove('show'); persist(); render(); };
+$('emCover').onclick=()=>{ $('envModal').classList.remove('show');
+ const list=$('coverList'); list.innerHTML='';
+ S.env.filter(e=>e.id!==curEnv.id && rem(e)>0).forEach(e=>{
+   const b=document.createElement('button'); b.style.cssText='display:block;width:100%;margin-bottom:6px;padding:11px;background:#1d3a2d;color:var(--paper);text-align:left;border-radius:5px';
+   b.textContent=e.n+' — '+$$(rem(e))+' available';
+   b.onclick=()=>{ coverFrom(curEnv, e); $('coverModal').classList.remove('show'); };
+   list.appendChild(b); });
+ if(!list.children.length) list.innerHTML='<p>No envelope has money to give. That is itself information.</p>';
+ $('coverModal').classList.add('show'); };
+$('coverCancel').onclick=()=>$('coverModal').classList.remove('show');
+
+/* ---------- close modal ---------- */
+$('closeSweep').onclick=()=>{ $('closeModal').classList.remove('show'); closeMonth(true); };
+$('closeKeep').onclick=()=>{ $('closeModal').classList.remove('show'); closeMonth(false); };
+$('closeCancel').onclick=()=>$('closeModal').classList.remove('show');
+
+/* ---------- quick log ---------- */
+$('logGo').onclick=()=>{ const c=C($('logAmt').value);
+ if(c<=0){ toast('Enter an amount.'); return; }
+ spend($('logEnv').value, c, $('logNote').value.trim());
+ $('logAmt').value=''; $('logNote').value=''; };
+$('logAmt').addEventListener('keydown',e=>{ if(e.key==='Enter') $('logGo').click(); });
+$('payday').onclick=payday;
+
+/* ---------- statement ---------- */
+async function statement(){
+ let out='BRASS TACKS \u2014 STATEMENT \u2014 '+today()+'\n\n';
+ out+='Income this month: '+$$(S.month.income)+'   To assign: '+$$(S.month.tray)+'\n\n';
+ out+='ENVELOPES\n';
+ S.env.forEach(e=>{ out+='  '+e.n.padEnd(16)+' assigned '+$$(e.c+e.a).padStart(11)+'  spent '+$$(e.s).padStart(11)+'  left '+$$(rem(e)).padStart(11)+(rem(e)<0?'  ** RED INK':'')+'\n'; });
+ const savedM=S.env.filter(e=>e.save||e.buf).reduce((s,e)=>s+e.a,0);
+ if(S.month.income>0) out+='\nSavings rate (Future You + Buffer / income): '+Math.round(100*savedM/S.month.income)+'%\n';
+ const r=runway(); if(r!==null) out+='Runway: '+r.toFixed(1)+' months\n';
+ if(S.hist.length){ out+='\nHISTORY (last '+Math.min(6,S.hist.length)+')\n';
+   S.hist.slice(-6).forEach(h=>{ out+='  '+h.ym+'  income '+$$(h.income)+'  spent '+$$(h.spent)+'  saved '+$$(h.saved)+(h.ovr?'  red:'+h.ovr:'')+'\n'; }); }
+ out+='\nRank: '+rank()+' \u00B7 streak '+S.meta.streak+'d \u00B7 '+S.meta.xp+' pts\n';
+ shareText(out, 'brass_tacks_'+today()+'.txt');
+ toast('Statement filed.'); }
+
+
+/* ---------- iOS-safe share ---------- */
+async function shareText(out, fname){
+ let copied=false;
+ try{ await navigator.clipboard.writeText(out); copied=true; }catch(e){}
+ try{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([out],{type:'text/plain'}));
+   a.download=fname; a.click(); }catch(e){}
+ document.getElementById('shText').value=out;
+ document.getElementById('shMsg').textContent = copied
+   ? 'Copied to clipboard (a file download was also attempted). If your device blocked either, the text below is selectable.'
+   : 'Clipboard was blocked here \u2014 use the Copy button, or long-press the text below.';
+ document.getElementById('shModal').classList.add('show');
+}
+document.getElementById('shClose').onclick=()=>document.getElementById('shModal').classList.remove('show');
+document.getElementById('shCopy').onclick=()=>{ const t=document.getElementById('shText');
+ t.focus(); t.select(); try{ t.setSelectionRange(0, 999999); }catch(e){}
+ let ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+ toast(ok? 'Copied.' : 'Long-press the text to copy manually.'); };
+
+
+/* ---------- in-page ask (no prompt popups) ---------- */
+let askCb=null;
+function ask(title, val, mode, cb){ askCb=cb; document.getElementById('askTitle').textContent=title;
+ const i=document.getElementById('askInput'); i.value=(val===undefined||val===null)?'':val; i.inputMode=mode||'text';
+ document.getElementById('askModal').classList.add('show'); setTimeout(()=>{ i.focus(); i.select(); },60); }
+document.getElementById('askGo').onclick=()=>{ document.getElementById('askModal').classList.remove('show');
+ const v=document.getElementById('askInput').value; if(askCb){ const cb=askCb; askCb=null; cb(v); } };
+document.getElementById('askCancel').onclick=()=>{ askCb=null; document.getElementById('askModal').classList.remove('show'); };
+document.getElementById('askInput').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('askGo').click(); });
+
+/* ---------- boot ---------- */
+(async function(){ try{ const v=await store.get('bt:state'); if(v) S=JSON.parse(v); }catch(e){}
+ render(); })();
+</script>
+</body>
+</html>

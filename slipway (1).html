@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0E171C">
+
+<title>Slipway — a project game</title>
+<style>
+:root{ --night:#0E171C; --steel:#1C2B33; --deck:#22323A; --fog:#D7E1E4; --dim:#7E939B;
+  --crane:#E8842F; --starb:#5FA98F; --chalk:#EDE7D8; --red:#C75146; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0; background:var(--night); color:var(--fog);
+  font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; min-height:100%;}
+button{font:inherit; cursor:pointer; border:none; border-radius:4px;}
+button,select,input,textarea{touch-action:manipulation}
+.sign{font-family:'Avenir Next','Trebuchet MS',Verdana,sans-serif; text-transform:uppercase; letter-spacing:.14em;}
+.mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;}
+header{position:sticky; top:0; z-index:40; background:linear-gradient(var(--night) 80%,transparent); padding:10px 14px 6px;}
+.strip{display:flex; align-items:center; gap:10px;}
+.brand{font-size:14px; color:var(--chalk);} .brand b{color:var(--crane)}
+.meters{display:flex; gap:14px; align-items:center; margin-top:8px; font-size:12px; color:var(--dim); flex-wrap:wrap;}
+.meters .v{color:var(--fog)}
+.xpbar{flex:1 1 140px; height:8px; background:var(--steel); border-radius:4px; overflow:hidden; min-width:110px;}
+.xpbar i{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--crane),var(--starb)); transition:width .5s;}
+.ships{display:flex; gap:8px; overflow-x:auto; padding:8px 14px 2px; max-width:1180px; margin:0 auto;}
+.chip{flex:0 0 auto; background:var(--steel); color:var(--dim); padding:9px 13px; border-radius:16px; font-size:13px; border:1px solid #0006;}
+.chip.on{background:var(--crane); color:#1a1208;}
+.chip.add{color:var(--starb); border-style:dashed;}
+.wrap{display:grid; grid-template-columns:1fr; gap:14px; padding:10px 14px 90px; max-width:1180px; margin:0 auto;}
+@media(min-width:920px){ .wrap{grid-template-columns:1fr 1fr 1fr 300px; align-items:start;} }
+.lane{background:#0B1216; border:1px solid #0008; border-radius:6px; padding:10px;}
+.lane h2{margin:0 0 8px; font-size:11px; color:var(--dim); display:flex; justify-content:space-between; align-items:center;}
+.lane.crane{border-top:3px solid var(--crane);}
+.lane.crane h2{color:var(--crane)}
+.hooks{display:flex; gap:4px;}
+.hooks i{width:14px; height:6px; border-radius:2px; background:var(--steel);}
+.hooks i.full{background:var(--crane);}
+.crate{width:100%; text-align:left; background:var(--deck); color:var(--fog); border-left:4px solid var(--dim);
+  border-radius:3px; padding:10px 11px; margin-bottom:8px; display:flex; gap:8px; align-items:center;}
+.crate .sz{font-size:10px; color:#1a1208; background:var(--dim); border-radius:3px; padding:2px 6px; flex:0 0 auto;}
+.crate.s1 .sz{background:var(--starb)} .crate.s2 .sz{background:var(--crane)} .crate.s3 .sz{background:var(--red); color:var(--chalk)}
+.crate .t{flex:1; font-size:14px;}
+.crate .x{color:var(--dim); background:none; padding:4px 6px; font-size:14px;}
+.crate.shipped{opacity:.65; border-left-color:var(--starb);}
+.lane .empty{font-size:12px; color:var(--dim); font-style:italic; padding:6px 2px;}
+.addrow{display:flex; gap:6px; margin-top:6px;}
+.addrow input{flex:1; min-width:0; background:var(--steel); border:1px solid #0007; color:var(--fog); padding:11px; border-radius:4px; font:inherit;}
+.addrow select{background:var(--steel); color:var(--fog); border:none; border-radius:4px; padding:0 6px;}
+.addrow button{background:var(--starb); color:#0c1512; padding:0 14px;}
+.rail{display:flex; flex-direction:column; gap:12px;}
+.panel{background:#0B1216; border:1px solid #0008; border-radius:6px; padding:12px;}
+.panel h3{margin:0 0 8px; font-size:11px; color:var(--dim); letter-spacing:.12em;}
+.tide{font-size:13px; color:var(--fog); margin-bottom:6px;}
+.tide b{color:var(--crane)}
+.burn{display:flex; flex-direction:column; gap:4px; font-size:10.5px; color:var(--dim);}
+.burn .bar{height:6px; background:var(--steel); border-radius:3px; overflow:hidden;}
+.burn .bar i{display:block; height:100%;}
+.dock{display:flex; flex-wrap:wrap; gap:3px; align-items:flex-end; min-height:26px;}
+.dock span{width:13px; height:13px; background:var(--crane); border-radius:2px;}
+.dock span.big{height:19px} .dock span.huge{height:25px; background:var(--red);}
+.ship-art{font-size:22px; margin-top:6px; transition:transform 1.4s ease-in, opacity 1.4s;}
+.ship-art.sail{transform:translateX(140px); opacity:0;}
+@media(prefers-reduced-motion:reduce){ .ship-art{transition:none} }
+.horizon{font-size:18px; letter-spacing:4px; min-height:24px;}
+.hz-label{font-size:10.5px; color:var(--dim); margin-top:4px;}
+.ach{display:flex; flex-wrap:wrap; gap:6px;}
+.ach span{font-size:10.5px; padding:4px 8px; border-radius:10px; background:var(--steel); color:var(--dim); border:1px solid #0006;}
+.ach span.got{color:#0c1512; background:var(--starb);}
+.foot{position:fixed; left:0; right:0; bottom:0; z-index:50; background:linear-gradient(transparent,var(--night) 30%);
+  padding:10px 14px calc(12px + env(safe-area-inset-bottom)); display:flex; gap:8px; max-width:1180px; margin:0 auto;}
+.btn{background:var(--crane); color:#1a1208; padding:13px 16px; font-size:14px; flex:1; border-radius:4px;}
+.btn.ghost{background:var(--steel); color:var(--fog); flex:0 0 auto;}
+.toast{position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:80; background:var(--crane); color:#1a1208;
+  padding:10px 16px; border-radius:4px; font-size:14px; box-shadow:0 6px 24px #000a; opacity:0; pointer-events:none; transition:opacity .3s;}
+.toast.show{opacity:1}
+.banner{background:#3a2c20; color:var(--fog); font-size:12.5px; padding:8px 12px; border-radius:4px; margin:6px 14px; max-width:1152px; display:none;}
+.modal{position:fixed; inset:0; background:#000a; z-index:90; display:none; align-items:center; justify-content:center; padding:18px;}
+.modal.show{display:flex}
+.box{background:var(--deck); border-radius:6px; padding:18px; max-width:430px; width:100%;}
+.box h3{margin:0 0 6px; color:var(--chalk); font-size:15px;}
+.box p{font-size:12.5px; color:var(--dim); margin:6px 0 12px;}
+.box input{width:100%; padding:11px; font:inherit; background:var(--steel); color:var(--fog); border:1px solid #0007; border-radius:4px; margin-bottom:8px;}
+.box .row{display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;}
+.loading{padding:60px 20px; text-align:center; color:var(--dim); font-style:italic;}
+</style>
+</head>
+<body>
+<header>
+  <div class="strip">
+    <div class="brand sign"><b>SLIPWAY</b> · a project game</div>
+  </div>
+  <div class="meters">
+    <span class="sign" id="level">—</span>
+    <span>streak <span class="v" id="streak">0</span>d</span>
+    <span><span class="v" id="xp">0</span> pts</span>
+    <div class="xpbar"><i id="xpfill"></i></div>
+    <span id="nextlvl" class="mono"></span>
+  </div>
+</header>
+<div class="ships" id="shipchips"></div>
+<div class="banner" id="banner"></div>
+<div class="wrap" id="app"><div class="loading">opening the harbor…</div></div>
+
+<div class="foot">
+  <button class="btn sign" id="reportBtn">File the report</button>
+  <button class="btn ghost" id="bk">Back up</button>
+  <button class="btn ghost" id="rs">Restore</button>
+  <input type="file" id="rsFile" accept=".json,application/json" style="display:none">
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal" id="shipModal"><div class="box">
+  <h3 class="sign">Lay a keel</h3>
+  <p>A ship is a project. The tide is its deadline — the harbor never argues with the tide.</p>
+  <input id="shipName" placeholder="Ship name (e.g., Website Refit)">
+  <input id="shipTide" type="date">
+  <div class="row"><button class="btn ghost" id="shipCancel">Not yet</button><button class="btn" id="shipGo" style="flex:0 0 auto">Launch</button></div>
+</div></div>
+
+<div class="modal" id="shModal"><div class="box">
+<h3>Export</h3><p id="shMsg" style="font-size:12.5px"></p>
+<textarea id="shText" readonly style="width:100%;min-height:170px;background:#101418;color:#e8e8e8;border:1px solid #0008;border-radius:5px;padding:10px;font-family:ui-monospace,Menlo,monospace;font-size:12px"></textarea>
+<div style="display:flex;gap:8px;margin-top:10px"><button id="shCopy" style="flex:1;padding:11px;background:#cfcfcf;color:#222;border-radius:5px">Copy</button><button id="shClose" style="flex:1;padding:11px;background:#3a3a3a;color:#ddd;border-radius:5px">Close</button></div>
+</div></div>
+<script>
+/* ---------- constants ---------- */
+const WIP = 3;
+const LEVELS = [[0,'Deckhand'],[30,'Rigger'],[90,'Bosun'],[200,'Dockmaster'],[450,'Harbormaster']];
+const ACH = [
+ ['crate','FIRST CRATE','ship your first crate'],
+ ['heavy','HEAVY LIFT','ship an L crate'],
+ ['lights','HARBOR LIGHTS','3-day streak'],
+ ['long','LONGSHORE','7-day streak'],
+ ['fifty','FIFTY CRATES','ship 50 crates'],
+ ['sail','SHIP IT','complete a ship'],
+ ['tidebeat','NO OVERBOARD','complete a ship before its tide'],
+ ['master','HARBORMASTER','reach the top rank']];
+const SZ = {1:'S',2:'M',3:'L'};
+
+/* ---------- storage: claude -> localStorage -> memory ---------- */
+let mem={};
+const HASC = typeof window!=='undefined' && !!window.storage;
+const HASLS = (()=>{ if(HASC) return false; try{ localStorage.setItem('__sw_t','1'); localStorage.removeItem('__sw_t'); return true; }catch(e){ return false; } })();
+const store={
+ async get(k){
+   if(HASC){ try{ const r=await window.storage.get(k); return r?r.value:null; }catch(e){ return null; } }
+   if(HASLS) return localStorage.getItem(k);
+   return (k in mem)?mem[k]:null; },
+ async set(k,v){
+   if(HASC){ try{ const r=await window.storage.set(k,v); if(r) return true; }catch(e){} }
+   if(HASLS){ try{ localStorage.setItem(k,v); return true; }catch(e){} }
+   mem[k]=v; const b=document.getElementById('banner'); b.style.display='block';
+   b.textContent='No storage available here (private browsing?). Use Back up before you leave the dock.';
+   return false; }
+};
+
+/* ---------- state ---------- */
+let S = { meta:{xp:0, shipped:0, streak:0, lastDay:'', ach:{}}, ships:[], active:null };
+let saveTm=null;
+const $=id=>document.getElementById(id);
+const uid=()=>Math.random().toString(36).slice(2,9);
+const today=()=>new Date().toISOString().slice(0,10);
+const fmt=n=>n.toLocaleString('en-US');
+function persist(){ clearTimeout(saveTm); saveTm=setTimeout(()=>store.set('sw:state', JSON.stringify(S)), 500); }
+function craneCount(){ return S.ships.reduce((c,sh)=>c+sh.tasks.filter(t=>t.st===1).length,0); }
+function activeShip(){ return S.ships.find(s=>s.id===S.active) || null; }
+function daysLeft(t){ return Math.ceil((new Date(t+'T23:59') - Date.now())/86400000); }
+
+/* ---------- toast & achievements ---------- */
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2300); }
+function award(id,name){ if(S.meta.ach[id]) return; S.meta.ach[id]=1; persist(); toast('Achievement — '+name); }
+function levelName(){ let l=LEVELS[0][1]; for(const [th,n] of LEVELS) if(S.meta.xp>=th) l=n; return l; }
+function checkAch(){
+ if(S.meta.shipped>=1) award('crate','FIRST CRATE');
+ if(S.meta.shipped>=50) award('fifty','FIFTY CRATES');
+ if(S.meta.streak>=3) award('lights','HARBOR LIGHTS');
+ if(S.meta.streak>=7) award('long','LONGSHORE');
+ if(levelName()==='Harbormaster') award('master','HARBORMASTER');
+}
+
+/* ---------- mutations ---------- */
+function addTask(title,size){
+ const sh=activeShip(); if(!sh) return;
+ sh.tasks.push({id:uid(), t:title, size, st:0});
+ persist(); render(); }
+function cycle(id){
+ const sh=activeShip(); const t=sh.tasks.find(x=>x.id===id); if(!t) return;
+ if(t.st===0){
+   if(craneCount()>=WIP){ toast('Crane\u2019s full \u2014 ship something first.'); return; }
+   t.st=1; toast('On the hook.');
+ } else if(t.st===1){
+   t.st=2; t.day=today();
+   S.meta.xp+=t.size; S.meta.shipped++;
+   const d=today();
+   if(S.meta.lastDay!==d){ const y=new Date(Date.now()-86400000).toISOString().slice(0,10);
+     S.meta.streak=(S.meta.lastDay===y)? S.meta.streak+1 : 1; S.meta.lastDay=d; }
+   if(t.size===3) award('heavy','HEAVY LIFT');
+   toast('Shipped. +'+t.size+' pts');
+   checkAch(); maybeSail(sh);
+ } else { t.st=1; if(craneCount()>WIP){ t.st=2; toast('Crane\u2019s full \u2014 can\u2019t take it back aboard.'); return; }
+   S.meta.xp=Math.max(0,S.meta.xp-t.size); S.meta.shipped=Math.max(0,S.meta.shipped-1); toast('Back on the hook.'); }
+ persist(); render(); }
+function delTask(id){ const sh=activeShip(); sh.tasks=sh.tasks.filter(x=>x.id!==id); toast('Crate scuttled.'); persist(); render(); }
+function maybeSail(sh){
+ if(!sh.tasks.length || sh.sailed) return;
+ if(sh.tasks.every(t=>t.st===2)){
+   sh.sailed=true; sh.sailDay=today();
+   award('sail','SHIP IT');
+   if(daysLeft(sh.tide)>=0) award('tidebeat','NO OVERBOARD');
+   const art=$('shipart'); if(art) art.classList.add('sail');
+   setTimeout(()=>{ const next=S.ships.find(s=>!s.sailed); S.active=next? next.id : null; persist(); render();
+     toast(sh.name+' has sailed.'); }, 1500);
+ } }
+
+/* ---------- render ---------- */
+function render(){
+ $('level').textContent=levelName();
+ $('streak').textContent=S.meta.streak;
+ $('xp').textContent=fmt(S.meta.xp);
+ const next=LEVELS.find(([th])=>th>S.meta.xp);
+ const prev=[...LEVELS].reverse().find(([th])=>th<=S.meta.xp);
+ $('xpfill').style.width = next? (100*(S.meta.xp-prev[0])/(next[0]-prev[0]))+'%' : '100%';
+ $('nextlvl').textContent = next? (next[0]-S.meta.xp)+' to '+next[1] : 'top rank';
+
+ const chips=$('shipchips'); chips.innerHTML='';
+ S.ships.filter(s=>!s.sailed).forEach(sh=>{
+   const b=document.createElement('button'); b.className='chip'+(sh.id===S.active?' on':'');
+   b.textContent=sh.name; b.onclick=()=>{S.active=sh.id; persist(); render();}; chips.appendChild(b); });
+ const add=document.createElement('button'); add.className='chip add'; add.textContent='+ lay a keel';
+ add.onclick=()=>{ $('shipModal').classList.add('show'); $('shipName').focus(); };
+ chips.appendChild(add);
+
+ const app=$('app'); app.innerHTML='';
+ const sh=activeShip();
+ if(!sh){ app.innerHTML='<div class="loading">No ships in the slip. Lay a keel \u2014 a project needs a name and a tide.</div>'; return; }
+
+ const lanes=[['HOLD',0],['CRANE',1],['SHIPPED',2]];
+ lanes.forEach(([name,st])=>{
+   const d=document.createElement('div'); d.className='lane'+(st===1?' crane':'');
+   let head='<h2 class="sign"><span>'+name+(st===1?' \u2014 '+craneCount()+' / '+WIP:'')+'</span>';
+   if(st===1){ head+='<span class="hooks">'+[0,1,2].map(i=>'<i class="'+(i<craneCount()?'full':'')+'"></i>').join('')+'</span>'; }
+   head+='</h2>'; d.innerHTML=head;
+   const items=sh.tasks.filter(t=>t.st===st);
+   if(!items.length) d.innerHTML+='<div class="empty">'+(st===0?'Nothing on hold. Add a crate below.':st===1?'Hooks free. Lift from hold.':'Nothing shipped yet \u2014 the dock is waiting.')+'</div>';
+   items.forEach(t=>{
+     const c=document.createElement('button'); c.className='crate s'+t.size+(st===2?' shipped':'');
+     c.innerHTML='<span class="sz mono">'+SZ[t.size]+'</span><span class="t">'+t.t.replace(/</g,'&lt;')+'</span>';
+     const x=document.createElement('span'); x.className='x'; x.textContent='\u2715';
+     x.onclick=(ev)=>{ev.stopPropagation(); delTask(t.id);};
+     c.appendChild(x); c.onclick=()=>cycle(t.id);
+     d.appendChild(c); });
+   if(st===0){
+     const row=document.createElement('div'); row.className='addrow';
+     row.innerHTML='<input id="newT" placeholder="New crate\u2026" maxlength="80"><select id="newS"><option value="1">S</option><option value="2" selected>M</option><option value="3">L</option></select><button id="newGo">Add</button>';
+     d.appendChild(row);
+     row.querySelector('#newGo').onclick=()=>{ const v=row.querySelector('#newT').value.trim();
+       if(v) addTask(v, parseInt(row.querySelector('#newS').value,10)); };
+     row.querySelector('#newT').addEventListener('keydown',e=>{ if(e.key==='Enter') row.querySelector('#newGo').click(); });
+   }
+   app.appendChild(d);
+ });
+
+ const rail=document.createElement('div'); rail.className='rail';
+ const total=sh.tasks.reduce((s,t)=>s+t.size,0)||1;
+ const done=sh.tasks.filter(t=>t.st===2).reduce((s,t)=>s+t.size,0);
+ const dl=daysLeft(sh.tide);
+ const span=Math.max(1,(new Date(sh.tide)-new Date(sh.created))/86400000);
+ const used=Math.min(100, 100*((Date.now()-new Date(sh.created))/86400000)/span);
+ rail.innerHTML='<div class="panel"><h3 class="sign">The tide</h3>'+
+   '<div class="tide"><b>'+(dl>=0? dl+' days':'OVERDUE '+(-dl)+'d')+'</b> \u00B7 due '+sh.tide+'</div>'+
+   '<div class="burn"><span>work shipped \u2014 '+Math.round(100*done/total)+'%</span><div class="bar"><i style="width:'+(100*done/total)+'%; background:var(--starb)"></i></div>'+
+   '<span>tide spent \u2014 '+Math.round(used)+'%</span><div class="bar"><i style="width:'+used+'%; background:var(--crane)"></i></div>'+
+   '<span style="margin-top:4px">'+(done/total>=used/100? 'Ahead of the tide.' : 'The tide is winning \u2014 lift smaller crates.')+'</span></div></div>'+
+   '<div class="panel"><h3 class="sign">The dock</h3><div class="dock">'+
+   sh.tasks.filter(t=>t.st===2).map(t=>'<span class="'+(t.size===2?'big':t.size===3?'huge':'')+'"></span>').join('')+
+   '</div><div class="ship-art" id="shipart">\u26F4\uFE0E</div></div>'+
+   '<div class="panel"><h3 class="sign">The horizon</h3><div class="horizon">'+
+   S.ships.filter(s=>s.sailed).map(()=>'\u26F5').join(' ')+'</div>'+
+   '<div class="hz-label">'+S.ships.filter(s=>s.sailed).length+' sailed \u00B7 '+fmt(S.meta.shipped)+' crates lifetime</div></div>'+
+   '<div class="panel"><h3 class="sign">Achievements</h3><div class="ach">'+
+   ACH.map(([id,n,d])=>'<span class="'+(S.meta.ach[id]?'got':'')+'" title="'+d+'">'+n+'</span>').join('')+'</div></div>';
+ app.appendChild(rail);
+}
+
+/* ---------- ship modal ---------- */
+$('shipCancel').onclick=()=>$('shipModal').classList.remove('show');
+$('shipGo').onclick=()=>{
+ const n=$('shipName').value.trim(); const t=$('shipTide').value;
+ if(!n || !t){ toast('A ship needs a name and a tide.'); return; }
+ const sh={id:uid(), name:n, tide:t, created:today(), sailed:false, tasks:[]};
+ S.ships.push(sh); S.active=sh.id;
+ $('shipName').value=''; $('shipModal').classList.remove('show');
+ persist(); render(); toast('Keel laid. The tide is set.');
+};
+
+/* ---------- report ---------- */
+$('reportBtn').onclick=async ()=>{
+ let out='SLIPWAY STATUS REPORT \u2014 '+today()+'\n\n';
+ S.ships.filter(s=>!s.sailed).forEach(sh=>{
+   const total=sh.tasks.reduce((s,t)=>s+t.size,0);
+   const done=sh.tasks.filter(t=>t.st===2).reduce((s,t)=>s+t.size,0);
+   const dl=daysLeft(sh.tide);
+   out+=sh.name.toUpperCase()+' \u2014 due '+sh.tide+' ('+(dl>=0? dl+' days left':'OVERDUE by '+(-dl)+' days')+')\n';
+   out+='  Shipped: '+done+'/'+total+' pts \u00B7 '+sh.tasks.filter(t=>t.st===2).length+'/'+sh.tasks.length+' crates\n';
+   const cr=sh.tasks.filter(t=>t.st===1); const hd=sh.tasks.filter(t=>t.st===0);
+   if(cr.length) out+='  In crane: '+cr.map(t=>t.t).join('; ')+'\n';
+   if(hd.length) out+='  On hold ('+hd.length+'): '+hd.map(t=>t.t).join('; ')+'\n';
+   out+='\n'; });
+ const sailed=S.ships.filter(s=>s.sailed);
+ if(sailed.length) out+='SAILED: '+sailed.map(s=>s.name+' ('+s.sailDay+')').join(' \u00B7 ')+'\n';
+ out+='\nCrane capacity '+WIP+' \u00B7 '+fmt(S.meta.xp)+' pts lifetime \u00B7 streak '+S.meta.streak+'d \u00B7 rank: '+levelName()+'\n';
+ shareText(out, 'slipway_report_'+today()+'.txt');
+ toast('Report filed.');
+};
+
+/* ---------- backup / restore ---------- */
+$('bk').onclick=()=>{ try{ const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));
+  a.download='slipway_save.json'; a.click(); toast('Harbor backed up.'); }
+ catch(e){ toast('Backup failed.'); } };
+$('rs').onclick=()=>$('rsFile').click();
+$('rsFile').onchange=async (ev)=>{ const f=ev.target.files[0]; if(!f) return;
+ try{ const j=JSON.parse(await f.text());
+   if(j.meta && j.ships){ S=j; await store.set('sw:state', JSON.stringify(S)); render(); toast('Harbor restored.'); }
+   else toast('Not a Slipway save file.'); }
+ catch(e){ toast('Could not read that file.'); } };
+
+
+/* ---------- iOS-safe share ---------- */
+async function shareText(out, fname){
+ let copied=false;
+ try{ await navigator.clipboard.writeText(out); copied=true; }catch(e){}
+ try{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([out],{type:'text/plain'}));
+   a.download=fname; a.click(); }catch(e){}
+ document.getElementById('shText').value=out;
+ document.getElementById('shMsg').textContent = copied
+   ? 'Copied to clipboard (a file download was also attempted). If your device blocked either, the text below is selectable.'
+   : 'Clipboard was blocked here \u2014 use the Copy button, or long-press the text below.';
+ document.getElementById('shModal').classList.add('show');
+}
+document.getElementById('shClose').onclick=()=>document.getElementById('shModal').classList.remove('show');
+document.getElementById('shCopy').onclick=()=>{ const t=document.getElementById('shText');
+ t.focus(); t.select(); try{ t.setSelectionRange(0, 999999); }catch(e){}
+ let ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+ toast(ok? 'Copied.' : 'Long-press the text to copy manually.'); };
+
+/* ---------- boot ---------- */
+(async function(){
+ try{ const v=await store.get('sw:state'); if(v){ S=JSON.parse(v); } }catch(e){}
+ if(!S.active && S.ships.some(s=>!s.sailed)) S.active=S.ships.find(s=>!s.sailed).id;
+ render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0D1116">
+<title>The Four Tables</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0; min-height:100vh; background:radial-gradient(900px 500px at 50% -100px,#1A2230,#0D1116 60%);
+ color:#E8E4DA; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+ display:flex; flex-direction:column; align-items:center; padding:34px 16px calc(30px + env(safe-area-inset-bottom));}
+h1{font-family:'Avenir Next','Trebuchet MS',sans-serif; letter-spacing:.18em; font-size:20px; margin:6px 0 2px;}
+.sub{color:#8A96A0; font-size:13px; margin-bottom:26px; letter-spacing:.06em;}
+.grid{display:grid; grid-template-columns:1fr; gap:12px; width:100%; max-width:520px;}
+@media(min-width:700px){ .grid{max-width:760px; grid-template-columns:1fr 1fr;} }
+a.card{display:block; text-decoration:none; border-radius:10px; padding:18px 16px 16px;
+ border:1px solid #00000088; color:inherit; background:#151B22; border-left:6px solid #555;
+ transition:transform .12s;}
+a.card:active{transform:scale(.985)}
+.t{font-family:'Avenir Next','Trebuchet MS',sans-serif; letter-spacing:.14em; font-size:15px; margin-bottom:4px;}
+.d{font-size:12.5px; color:#97A2AB; line-height:1.45;}
+.ns{border-left-color:#E0A458; background:linear-gradient(135deg,#1B2429,#131A1E);}
+.ns .t{color:#E0A458}
+.sw{border-left-color:#E8842F; background:linear-gradient(135deg,#1C2B33,#0E171C);}
+.sw .t{color:#E8842F}
+.bt{border-left-color:#C8A24A; background:linear-gradient(135deg,#13271F,#0B1B15);}
+.bt .t{color:#C8A24A}
+.br{border-left-color:#E2B96F; background:linear-gradient(135deg,#262243,#131124);}
+.br .t{color:#E2B96F}
+.foot{margin-top:26px; font-size:11px; color:#6E7A84; text-align:center; max-width:520px; line-height:1.6;}
+</style>
+</head>
+<body>
+<h1>THE FOUR TABLES</h1>
+<div class="sub">words · work · money · time</div>
+<div class="grid">
+  <a class="card ns" href="./night_shifts.html"><div class="t">NIGHT SHIFTS</div>
+    <div class="d">A writing game. Two novel campaigns, timed shifts, a refrain budget, and a wall of digits that grows as you do.</div></a>
+  <a class="card sw" href="./slipway.html"><div class="t">SLIPWAY</div>
+    <div class="d">A project game. Ships with tides, crates on a crane that holds only three — finish before you start.</div></a>
+  <a class="card bt" href="./brass_tacks.html"><div class="t">BRASS TACKS</div>
+    <div class="d">A budget game. Envelopes, paydays, red ink that must be covered from somewhere — every dollar employed.</div></a>
+  <a class="card br" href="./big_rocks.html"><div class="t">BIG ROCKS</div>
+    <div class="d">A time game. A jar of fixed size, one spotlight, a mirror that learns how long your minutes really run.</div></a>
+</div>
+<div class="foot">Each game saves on this device, privately. Use Back up inside any game to move or keep your progress.
+ Add this page to your Home Screen and the whole arcade becomes an app.</div>
+</body>
+</html>

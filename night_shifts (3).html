@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#131A1E">
+
+<title>Night Shifts — a writing game</title>
+<style>
+:root{
+  --basement:#131A1E; --pond:#BFD9D4; --marble:#E8E4D8; --amber:#E0A458;
+  --gravel:#5C6B6E; --ink:#0E1417; --card:#1B2429; --accent:var(--amber); --accent2:var(--pond);
+}
+[data-camp="un"]{ --accent:#B5452F; --accent2:#E3D7BC; --card:#20211C; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0; padding:0; background:var(--basement); color:var(--marble);
+  font-family:Georgia,'Iowan Old Style',serif; min-height:100%;}
+button{font:inherit; cursor:pointer; border:none; border-radius:3px;}
+button,select,input,textarea{touch-action:manipulation}
+.type{font-family:'American Typewriter','Courier New',Courier,monospace; letter-spacing:.06em;}
+.mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;}
+a{color:var(--accent2)}
+/* ---------- top strip ---------- */
+header{position:sticky; top:0; z-index:40; background:linear-gradient(var(--basement) 82%, transparent);
+  padding:10px 14px 6px;}
+.strip{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.brand{font-size:15px; color:var(--pond); text-transform:uppercase;}
+.brand b{color:var(--amber)}
+.campswitch{margin-left:auto; display:flex; gap:6px;}
+.campswitch button{padding:7px 10px; background:var(--card); color:var(--gravel); font-size:12px;}
+.campswitch button.on{color:var(--ink); background:var(--accent);}
+.meters{display:flex; gap:14px; align-items:center; margin-top:8px; font-size:12px; color:var(--gravel); flex-wrap:wrap;}
+.meters .v{color:var(--marble)}
+.bookbar{flex:1 1 160px; height:8px; background:var(--card); border-radius:4px; overflow:hidden; min-width:120px;}
+.bookbar i{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .6s;}
+/* ---------- layout ---------- */
+.wrap{display:grid; grid-template-columns:1fr; gap:14px; padding:8px 14px 90px; max-width:1180px; margin:0 auto;}
+.rail{display:flex; flex-direction:column; gap:10px;}
+.editorpane{display:none;}
+body.editing .rail{display:none;}
+body.editing .editorpane{display:block;}
+@media(min-width:900px){
+  .wrap{grid-template-columns:340px 1fr; align-items:start;}
+  .rail{display:flex !important; max-height:calc(100vh - 120px); overflow:auto; padding-right:4px;}
+  .editorpane{display:block !important;}
+  body.editing .rail{display:flex;}
+}
+/* ---------- index cards ---------- */
+.card{background:var(--card); border:1px solid #00000055; border-left:3px solid var(--gravel);
+  border-radius:2px; padding:11px 12px; text-align:left; color:var(--marble);
+  transform:rotate(var(--tilt,0deg)); transition:border-color .2s, transform .15s; width:100%;}
+.card:nth-child(odd){--tilt:.35deg}.card:nth-child(even){--tilt:-.3deg}
+.card:hover,.card:focus-visible{border-left-color:var(--accent); transform:rotate(0deg)}
+.card.done{border-left-color:var(--accent2)}
+.card.active{border-left-color:var(--accent); background:#222e34}
+[data-camp="un"] .card.active{background:#2a2b24}
+.card .n{color:var(--accent); font-size:11px;}
+.card .t{font-size:15px; margin:2px 0 4px; color:var(--marble)}
+.card .hook{font-size:12.5px; color:var(--gravel); font-style:italic;}
+.card .prog{height:4px; background:#00000066; border-radius:2px; margin-top:8px; overflow:hidden;}
+.card .prog i{display:block; height:100%; background:var(--accent2); width:0%;}
+.card .wc{font-size:10.5px; color:var(--gravel); margin-top:4px;}
+/* ---------- editor ---------- */
+.edhead{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+.back{background:none; color:var(--accent2); font-size:13px; padding:6px 8px 6px 0;}
+@media(min-width:900px){.back{display:none}}
+.edtitle{font-size:18px; color:var(--pond)}
+[data-camp="un"] .edtitle{color:var(--accent2)}
+.edtarget{margin-left:auto; font-size:12px; color:var(--gravel)}
+.mission{background:var(--card); border-left:3px solid var(--accent); padding:9px 11px; border-radius:2px;
+  font-size:13px; color:var(--marble); margin:10px 0; font-style:italic;}
+textarea{width:100%; min-height:46vh; background:#0F1518; color:var(--marble); border:1px solid #00000077;
+  border-radius:3px; padding:14px; font-family:Georgia,serif; font-size:16.5px; line-height:1.65; resize:vertical;}
+[data-camp="un"] textarea{background:#15150F}
+textarea:focus{outline:2px solid var(--accent); outline-offset:1px;}
+.edbar{display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap;}
+.btn{background:var(--accent); color:var(--ink); padding:11px 16px; font-size:14px;}
+.btn.ghost{background:var(--card); color:var(--marble);}
+.status{font-size:12.5px; color:var(--gravel); font-style:italic; min-width:70px;}
+.count{margin-left:auto; font-size:13px; color:var(--pond)}
+.refrain{font-size:12px; color:var(--gravel); margin-top:8px;}
+.refrain.over{color:var(--amber)}
+/* ---------- signature: wall of digits / blank lines ---------- */
+.signature{background:#0D1214; border:1px solid #00000088; border-radius:3px; padding:12px; margin-top:6px;}
+.signature h3{margin:0 0 8px; font-size:11px; color:var(--gravel); text-transform:uppercase; letter-spacing:.12em;}
+.wall{display:flex; flex-wrap:wrap; gap:3px;}
+.wall span{width:18px; height:24px; display:flex; align-items:center; justify-content:center;
+  background:#16201f; color:var(--pond); font-size:13px; border-radius:1px;}
+.wall span.new{animation:chalk .7s ease-out;}
+@keyframes chalk{from{transform:scale(1.6); opacity:0; color:var(--amber)} to{transform:scale(1); opacity:1}}
+@media(prefers-reduced-motion:reduce){.wall span.new{animation:none}}
+.blankline{border-bottom:1.5px solid var(--accent2); height:22px; margin:14px 4px 2px; position:relative;}
+.blankline em{position:absolute; right:0; top:24px; font-size:10.5px; color:var(--gravel); font-style:italic;}
+.sigfoot{font-size:11px; color:var(--gravel); margin-top:10px; font-style:italic;}
+/* ---------- sprint ---------- */
+.sprint{position:fixed; left:0; right:0; bottom:0; z-index:50; background:linear-gradient(transparent,var(--basement) 30%);
+  padding:10px 14px calc(12px + env(safe-area-inset-bottom)); display:flex; gap:8px; align-items:center; max-width:1180px; margin:0 auto;}
+.sprint select{background:var(--card); color:var(--marble); border:none; padding:11px 8px; border-radius:3px; font:inherit;}
+.sprintbtn{flex:1; background:var(--accent); color:var(--ink); padding:13px; font-size:15px; border-radius:3px;}
+.sprintbtn.live{background:var(--pond); color:var(--ink); animation:pulse 2s infinite;}
+[data-camp="un"] .sprintbtn.live{background:var(--accent2)}
+@keyframes pulse{50%{filter:brightness(1.12)}}
+@media(prefers-reduced-motion:reduce){.sprintbtn.live{animation:none}}
+.sprintinfo{font-size:13px; color:var(--pond); min-width:118px; text-align:right;}
+/* ---------- toasts, modal, banners ---------- */
+.toast{position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:80; background:var(--accent);
+  color:var(--ink); padding:10px 16px; border-radius:3px; font-size:14px; box-shadow:0 6px 24px #000a;
+  opacity:0; pointer-events:none; transition:opacity .3s;}
+.toast.show{opacity:1}
+.banner{background:#3a2c20; color:var(--marble); font-size:12.5px; padding:8px 12px; border-radius:3px; margin:0 14px 8px; max-width:1152px;}
+.modal{position:fixed; inset:0; background:#000a; z-index:90; display:none; align-items:center; justify-content:center; padding:18px;}
+.modal.show{display:flex}
+.box{background:var(--card); border-radius:4px; padding:18px; max-width:460px; width:100%;}
+.box h3{margin:0 0 6px; color:var(--pond); font-size:16px;}
+.box p{font-size:13px; color:var(--gravel); margin:6px 0 12px;}
+.box input{width:100%; padding:11px; font:inherit; background:#0F1518; color:var(--marble); border:1px solid #0007; border-radius:3px;}
+.box .row{display:flex; gap:8px; margin-top:12px; justify-content:flex-end;}
+.ach{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+.ach span{font-size:11px; padding:4px 8px; border-radius:10px; background:var(--card); color:var(--gravel); border:1px solid #0006;}
+.ach span.got{color:var(--ink); background:var(--accent2);}
+.loading{padding:60px 20px; text-align:center; color:var(--gravel); font-style:italic;}
+</style>
+</head>
+<body data-camp="sf">
+<header>
+  <div class="strip">
+    <div class="brand type"><b>NIGHT SHIFTS</b> · a writing game</div>
+    <div class="campswitch">
+      <button id="campSF" class="type on">SEED FIVE</button>
+      <button id="campUN" class="type">THE UNSIGNED</button>
+    </div>
+  </div>
+  <div class="meters">
+    <span class="type" id="level">—</span>
+    <span>streak <span class="v" id="streak">0</span>d</span>
+    <span>shifts <span class="v" id="sprints">0</span></span>
+    <div class="bookbar"><i id="bookfill"></i></div>
+    <span><span class="v" id="bookwords">0</span> / <span id="booktarget">80,000</span></span>
+  </div>
+</header>
+<div class="banner" id="banner" style="display:none"></div>
+<div class="wrap" id="app"><div class="loading">opening the basement…</div></div>
+
+<div class="sprint">
+  <select id="sprintLen"><option value="5">5 min</option><option value="15" selected>15 min</option><option value="25">25 min</option></select>
+  <button class="sprintbtn type" id="sprintBtn">START A SHIFT</button>
+  <div class="sprintinfo mono" id="sprintInfo"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal" id="exportModal"><div class="box">
+  <h3 class="type">Bind &amp; sign</h3>
+  <p>One blank was left on purpose. Sign the byline, and the draft assembles itself — copied to your clipboard and downloaded as a text file.</p>
+  <input id="byline" value="[Your Name]" aria-label="byline">
+  <div class="row" style="justify-content:flex-start"><button class="btn ghost" id="bk">Back up game</button><button class="btn ghost" id="rs">Restore from file</button><input type="file" id="rsFile" accept=".json,application/json" style="display:none"></div>
+  <div class="row"><button class="btn ghost" id="exCancel">Not yet</button><button class="btn" id="exGo">Sign &amp; export</button></div>
+</div></div>
+
+<div class="modal" id="shModal"><div class="box">
+<h3>Export</h3><p id="shMsg" style="font-size:12.5px"></p>
+<textarea id="shText" readonly style="width:100%;min-height:170px;background:#101418;color:#e8e8e8;border:1px solid #0008;border-radius:5px;padding:10px;font-family:ui-monospace,Menlo,monospace;font-size:12px"></textarea>
+<div style="display:flex;gap:8px;margin-top:10px"><button id="shCopy" style="flex:1;padding:11px;background:#cfcfcf;color:#222;border-radius:5px">Copy</button><button id="shClose" style="flex:1;padding:11px;background:#3a3a3a;color:#ddd;border-radius:5px">Close</button></div>
+</div></div>
+<script>
+/* ---------------- data ---------------- */
+const SF = {key:'sf', title:'SEED FIVE', verb:'filed.', target:80000,
+ levels:[[0,'Mop Cadet'],[2000,'Night Janitor'],[8000,'Keeper of the Count'],[20000,'Clerk of the File'],[45000,'Custodian of the Loop']],
+ ch:[
+[1,'A Person Could Get Attached','“This book is true the way a rerun is true.”','Author’s confession: the bar, the bowling trophy, why the book resisted 23 years. Set the refrain’s law.',3000],
+[2,'The Calloway Institute for Recurrent Systems','“The Institute was named for a soap fortune.”','Tour the building and the routine; the furnace’s opinions; plant the wall of digits without explaining it.',3000],
+[3,'Orville Tunk','“Tunk wrote fast and badly about enormous things.”','Establish the Tunk device: one flat paragraph per terrible novel; the depot rack; bad prose, true freight.',2800],
+[4,'Gristle','“What chews back, call gristle. Who returns, call spool.”','Loopism’s lexicon, item by item; Book of Around couplets; name the heresy (confetti) for later.',3000],
+[5,'The Bus on Route Nine','“Carol Ann Foss was eleven in 1986, and then she was not anything.”','The grief chapter, narrated flat — the flatter the sadder. Refrain exactly once.',3200],
+[6,'What the Machine Does All Day','“A checkerboard wrapped like a bedsheet tucked by somebody angry.”','Physics in janitor English; run it backward fifty years and land on the same frame.',3000],
+[7,'Dr. Mim Explains Reversibility','“Nothing is destroyed. Scrambled, yes. Deleted, never.”','The file and the slow clerk; the friendship’s grammar; the word hope never said.',3000],
+[8,'The Number','“Ninety digits and the word ETCETERA.”','Scale gags played straight; the furnace-wall rosary, one digit a night.',3000],
+[9,'The Echo','“One marble. Seventeen percent.”','Copies are cheap, histories are not; Mim mourns a six-hour universe; the logs seed the auditor.',3000],
+[10,'Loopism, Formalized','“Be kind to your spool meanwhile.”','Rites, feast days, the single commandment’s casework. One inch from parody, never over.',3000],
+[11,'Door-to-Door Seeds','“Fresh universes, a nickel down, in little wax envelopes.”','Tunk #2 and the depot exegesis; the question: would you change the seed, knowing what it deletes?',2800],
+[12,'The Committee','“The defunding took eleven minutes.”','Sunset-pathway satire; the chiropractor’s absurd grant; the auditor arrives as a cc: line.',3000],
+[13,'The Five That Never Move','“Stubborn as a family photograph.”','Invariants as family; night-shift monologues; remembered vs filed, at different speeds.',3000],
+[14,'The Furnace','“Dying the way furnaces do, which is operatically.”','Mortal furnace vs immortal board; the repairman’s estimate; winter as antagonist.',2800],
+[15,'The Wager','“I want to be survived by something that cannot lose.”','Deathbed terms; the seed card moves to the wallet; “the smallest number that ever loved me back.”',3000],
+[16,'Eternal Return, Explained Badly on Purpose','“Crush you or crown you?”','Depot philosophy, never cited; only the unbereaved answer crown.',2800],
+[17,'The Laugh Track','“Same funerals. Different laughs.”','The confetti temptation at full strength; the mathematics as cruel referee.',2800],
+[18,'The Funeral','“Folding chairs and a nephew with a guitar.”','Grief, second pass; the early spring count; refrain exactly once.',3000],
+[19,'The Letter','“Arbitrary is the name we give to other people’s photographs.”','The seed’s origin: the war, the sister, the photograph; “the file does not need the lamp.”',3000],
+[20,'The Auditor','“The state does not send villains; it sends calendars.”','Shutdown order in person; TIMEKEEPING (LEGACY); set the date: the fourteenth of April.',3000],
+[21,'Gristle, Continued','“Confetti: nothing. He checked the column twice.”','The audit of a life in Loopist accounting; one notebook page in full.',2800],
+[22,'The Author Shows Up','“I came to negotiate the ending, the way you would with a zoning board.”','Metafiction kept humble: the author petitions his character and loses; exits in snow.',3000],
+[23,'The Unplugging That Wasn’t','“You cannot kill a loop. The file does not need the lamp.”','The cord temptation resolved by doctrine; the van already on Route Nine.',3000],
+[24,'Snow','“Everything that falls is filed. / Everything filed, a child.”','Pure texture; the sled winter; Ruth’s four-minute call. Refrain withheld on purpose.',2600],
+[25,'The First Picture','“He ran the universe backward. All the way.”','Forty-seven years undone before lunch; “the direction with the people in it.” Touch it once.',2800],
+[26,'Around It Comes','“The state, filing the file.”','The unplugging, whoever pulls it; bracketed alternative endings; the refrain closes the book.',2800]]};
+const UN = {key:'un', title:'THE UNSIGNED', verb:'on the record.', target:78000,
+ levels:[[0,'Countersigner Third Class'],[2000,'Countersigner Second Class'],[8000,'Countersigner First Class'],[20000,'Examiner of Hands'],[45000,'The Blank']],
+ ch:[
+[1,'The Quarter Hour','“His own signature, dated six weeks away.”','Cold open and procedural panic; the stair slogans; end on the day-log and the shaking hand.',7500],
+[2,'The Office of Attribution','“A citizen is the sum of what he has signed.”','The apparatus chapter: the Flood of Texts; a voiding at administrative distance; seed Prest by reputation.',8000],
+[3,'The Notebook','“Graphite was a controlled substance.”','First handwriting; authenticity is the flaw, the shaking hand the watermark; hide it inside the regulations.',7500],
+[4,'The Audit','“By mid-morning there was, administratively speaking, no person.”','Pell voided; Wren attests a lie and finds it easy; the confession resurfaces, countersigned.',8000],
+[5,'Ada','“Four words: which ones are yours.”','The alliance; tradecraft in queues; her brother, voided for keeping drawings.',8000],
+[6,'The Archive of Hands','“The trembling in the line was the signature.”','The vault of unattested letters; the creed found on a flyleaf; he copies it and is countersigned by it.',7500],
+[7,'The Cell','“Their method was not forgery. It was the opposite. They declined.”','The Blank Campaign; the honest debate the regime deserves; they ask for the original.',8000],
+[8,'The Fourteenth of April','“Familiar in a way that emptied him before the doors closed.”','The capture; betrayal at maximum ambiguity; terror by paperwork.',7500],
+[9,'Counselor Prest','“A signature does not record the will. It replaces it.”','True statements until signing costs nothing; Prest wins every argument and loses only the blank.',8500],
+[10,'The Quarter Hour (reprise)','“He signed. And he meant it.”','The ending in full, plus the bracketed blank-line alternative. Choose what the book earns.',7500]]};
+const CAMPS = {sf:SF, un:UN};
+const ACH = [
+ ['first','FIRST PICTURE','save your first words'],
+ ['count','THE COUNT IS KEPT','finish any chapter'],
+ ['gristle','GRISTLE','3-day streak'],
+ ['spool','SPOOL','7-day streak'],
+ ['run41','THE FORTY-FIRST RUN','41 shifts'],
+ ['etc','ETCETERA','19,729 lifetime words'],
+ ['refrain','REFRAIN DISCIPLINE','finish a Seed Five chapter with ≤1 refrain'],
+ ['void','VOID UNTIL SIGNED','bind & sign with a real byline']];
+
+/* ---------------- storage ---------------- */
+let mem={}, mode='memory';
+const HASC = typeof window!=='undefined' && !!window.storage;
+const HASLS = (()=>{ if(HASC) return false; try{ localStorage.setItem('__ns_t','1'); localStorage.removeItem('__ns_t'); return true; }catch(e){ return false; } })();
+const store={
+ async get(k){
+   if(HASC){ try{ const r=await window.storage.get(k); mode='claude'; return r?r.value:null; }catch(e){ mode='claude'; return null; } }
+   if(HASLS){ mode='local'; return localStorage.getItem(k); }
+   mode='memory'; return (k in mem)?mem[k]:null; },
+ async set(k,v){
+   if(HASC){ try{ const r=await window.storage.set(k,v); if(r){ mode='claude'; return true; } }catch(e){} }
+   if(HASLS){ try{ localStorage.setItem(k,v); mode='local'; return true; }catch(e){} }
+   mem[k]=v; showBanner(); return false; }
+};
+function showBanner(){ const b=document.getElementById('banner'); b.style.display='block';
+ b.textContent="No storage available here (private browsing?). Words last only while this tab is open \u2014 use Back up or Bind & sign before leaving."; }
+
+/* ---------------- state ---------------- */
+let meta={camp:'sf', life:0, streak:0, lastDay:'', sprints:0, ach:{}, byline:''};
+let texts={sf:{}, un:{}};   // texts[camp][n] = string
+let active={sf:1, un:1};
+let sprint=null;
+const $=id=>document.getElementById(id);
+const wc=t=>t? t.trim().split(/\s+/).filter(Boolean).length : 0;
+const fmt=n=>n.toLocaleString('en-US');
+const today=()=>new Date().toISOString().slice(0,10);
+function camp(){ return CAMPS[meta.camp]; }
+function chKey(c,n){ return 'ns:'+c+':'+n; }
+function campWords(c){ return CAMPS[c].ch.reduce((s,ch)=>s+wc(texts[c][ch[0]]||''),0); }
+function refrains(){ return SF.ch.reduce((s,ch)=>s+((texts.sf[ch[0]]||'').match(/around it comes/gi)||[]).length,0); }
+
+/* ---------------- digits (seeded 5) ---------------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const rngDigits=(()=>{const r=mulberry32(5);const arr=[];return n=>{while(arr.length<n)arr.push(Math.floor(r()*10));return arr.slice(0,n);}})();
+
+/* ---------------- render ---------------- */
+function render(){
+ document.body.dataset.camp=meta.camp;
+ $('campSF').classList.toggle('on',meta.camp==='sf');
+ $('campUN').classList.toggle('on',meta.camp==='un');
+ const C=camp(), words=campWords(meta.camp);
+ $('booktarget').textContent=fmt(C.target);
+ $('bookwords').textContent=fmt(words);
+ $('bookfill').style.width=Math.min(100,100*words/C.target)+'%';
+ let lvl=C.levels[0][1]; for(const [th,name] of C.levels) if(words>=th) lvl=name;
+ $('level').textContent=lvl;
+ $('streak').textContent=meta.streak;
+ $('sprints').textContent=meta.sprints;
+
+ const app=$('app'); app.innerHTML='';
+ const rail=document.createElement('div'); rail.className='rail';
+ C.ch.forEach(([n,t,hook,mission,target])=>{
+   const w=wc(texts[meta.camp][n]||'');
+   const b=document.createElement('button'); b.className='card'+(w>=target?' done':'')+(n===active[meta.camp]?' active':'');
+   b.innerHTML='<div class="n type">'+(meta.camp==='sf'? n+'.' : 'CHAPTER '+n)+'</div>'+
+     '<div class="t">'+t+'</div><div class="hook">'+hook+'</div>'+
+     '<div class="prog"><i style="width:'+Math.min(100,100*w/target)+'%"></i></div>'+
+     '<div class="wc mono">'+fmt(w)+' / '+fmt(target)+(w>=target?' — kept.':'')+'</div>';
+   b.onclick=()=>{ active[meta.camp]=n; document.body.classList.add('editing'); render(); const ta=$('ta'); if(ta) ta.focus(); };
+   rail.appendChild(b);
+ });
+ rail.appendChild(signaturePanel());
+ rail.appendChild(achPanel());
+ app.appendChild(rail);
+
+ const ed=document.createElement('div'); ed.className='editorpane';
+ const [n,t,hook,mission,target]=C.ch.find(c=>c[0]===active[meta.camp]);
+ const cur=texts[meta.camp][n]||'';
+ ed.innerHTML='<div class="edhead"><button class="back" id="back">‹ cards</button>'+
+   '<div class="edtitle type">'+(meta.camp==='sf'? n+'. ':'CHAPTER '+n+' · ')+t+'</div>'+
+   '<div class="edtarget mono" id="edtarget"></div></div>'+
+   '<div class="mission">'+mission+'</div>'+
+   '<textarea id="ta" placeholder="'+hook.replace(/"/g,'&quot;')+'  …keep going."></textarea>'+
+   '<div class="edbar"><button class="btn" id="save">Save</button>'+
+   '<button class="btn ghost" id="export">Bind &amp; sign</button>'+
+   '<span class="status" id="status"></span><span class="count mono" id="count"></span></div>'+
+   '<div class="refrain" id="refrain"></div>';
+ app.appendChild(ed);
+ $('ta').value=cur;
+ $('back').onclick=()=>{ document.body.classList.remove('editing'); render(); };
+ $('save').onclick=()=>saveActive(true);
+ $('export').onclick=()=>$('exportModal').classList.add('show');
+ $('ta').addEventListener('input', ()=>{ liveCount(); clearTimeout(saveActive.tm); saveActive.tm=setTimeout(()=>saveActive(false),900); });
+ liveCount();
+}
+function liveCount(){
+ const C=camp(); const [n,, ,,target]=C.ch.find(c=>c[0]===active[meta.camp]);
+ const w=wc($('ta').value);
+ $('count').textContent=fmt(w)+' words';
+ $('edtarget').textContent='target '+fmt(target);
+ if(meta.camp==='sf'){ const r=refrainsLive(); const el=$('refrain');
+   el.textContent='Refrain budget: '+r+' / 10 — “if it starts feeling comfortable, cut two.”';
+   el.className='refrain'+(r>10?' over':''); }
+ else $('refrain').textContent='';
+ if(sprint){ $('sprintInfo').textContent=Math.max(0,Math.ceil((sprint.end-Date.now())/1000/60))+'m · +'+Math.max(0,w-sprint.startW)+' w'; }
+}
+function refrainsLive(){
+ let r=0; SF.ch.forEach(([n])=>{ const t=(n===active.sf && meta.camp==='sf' && $('ta'))? $('ta').value : (texts.sf[n]||'');
+   r+=((t.match(/around it comes/gi))||[]).length; }); return r;
+}
+function signaturePanel(){
+ const d=document.createElement('div'); d.className='signature';
+ if(meta.camp==='sf'){
+   const words=campWords('sf'); const earned=Math.floor(words/100);
+   const show=rngDigits(Math.max(earned,1)).slice(-150);
+   d.innerHTML='<h3 class="type">The Wall of Digits — '+fmt(earned)+' / 19,729 chalked</h3>'+
+     '<div class="wall">'+show.map((x,i)=>'<span'+(i===show.length-1&&earned>0?' class="new"':'')+'>'+x+'</span>').join('')+'</div>'+
+     '<div class="sigfoot">Every 100 words chalks the next digit of the recurrence number (seeded 5). A rosary is just arithmetic you can lean on.</div>';
+ }else{
+   const done=UN.ch.filter(([n,,,,target])=>wc(texts.un[n]||'')>=target);
+   d.innerHTML='<h3 class="type">The Blank Lines — '+done.length+' of 10 left blank on purpose</h3>'+
+     (done.length? done.map(([n,t])=>'<div class="blankline"><em>Ch. '+n+' — '+t+'</em></div>').join('')
+                 : '<div class="sigfoot">Finish a chapter and its signature line appears here — empty, unprosecutable, the only unanswerable sentence in the Republic.</div>')+
+     (done.length?'<div class="sigfoot">An empty line is an invitation the Ledger cannot countersign.</div>':'');
+ }
+ return d;
+}
+function achPanel(){
+ const d=document.createElement('div'); d.className='signature';
+ d.innerHTML='<h3 class="type">Achievements</h3><div class="ach">'+
+   ACH.map(([id,name,desc])=>'<span class="'+(meta.ach[id]?'got':'')+'" title="'+desc+'">'+name+'</span>').join('')+'</div>';
+ return d;
+}
+
+/* ---------------- saving, streaks, achievements ---------------- */
+async function saveActive(manual){
+ const C=camp(); const n=active[meta.camp];
+ const t=$('ta')? $('ta').value : (texts[meta.camp][n]||'');
+ const before=wc(texts[meta.camp][n]||''); const after=wc(t);
+ texts[meta.camp][n]=t;
+ await store.set(chKey(meta.camp,n), t);
+ const delta=Math.max(0, after-before);
+ if(delta>0){
+   meta.life+=delta;
+   const d=today();
+   if(meta.lastDay!==d){
+     const y=new Date(Date.now()-86400000).toISOString().slice(0,10);
+     meta.streak=(meta.lastDay===y)? meta.streak+1 : 1; meta.lastDay=d;
+   }
+ }
+ await store.set('ns:meta', JSON.stringify(meta));
+ $('status').textContent=C.verb;
+ setTimeout(()=>{ if($('status')) $('status').textContent=''; },1400);
+ checkAch(after, n);
+ // light refresh of rail numbers without losing focus:
+ if(manual) render(); else { updateRailOnly(); }
+}
+function updateRailOnly(){
+ const C=camp(); const words=campWords(meta.camp);
+ $('bookwords').textContent=fmt(words);
+ $('bookfill').style.width=Math.min(100,100*words/C.target)+'%';
+ let lvl=C.levels[0][1]; for(const [th,name] of C.levels) if(words>=th) lvl=name;
+ $('level').textContent=lvl; $('streak').textContent=meta.streak;
+}
+function award(id,name){ if(meta.ach[id]) return; meta.ach[id]=1; store.set('ns:meta',JSON.stringify(meta));
+ toast('Achievement — '+name); }
+function checkAch(afterWords, n){
+ if(meta.life>0) award('first','FIRST PICTURE');
+ const C=camp(); const cur=C.ch.find(c=>c[0]===n);
+ if(cur && afterWords>=cur[4]){ award('count','THE COUNT IS KEPT');
+   if(meta.camp==='sf'){ const r=((texts.sf[n]||'').match(/around it comes/gi)||[]).length;
+     if(r<=1) award('refrain','REFRAIN DISCIPLINE'); } }
+ if(meta.streak>=3) award('gristle','GRISTLE');
+ if(meta.streak>=7) award('spool','SPOOL');
+ if(meta.sprints>=41) award('run41','THE FORTY-FIRST RUN');
+ if(meta.life>=19729) award('etc','ETCETERA');
+}
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show');
+ setTimeout(()=>t.classList.remove('show'),2400); }
+
+/* ---------------- sprint ---------------- */
+$('sprintBtn').onclick=()=>{
+ if(sprint){ endSprint(); return; }
+ const mins=parseInt($('sprintLen').value,10);
+ const startW=$('ta')? wc($('ta').value):0;
+ sprint={end:Date.now()+mins*60000, startW, tick:setInterval(()=>{
+   if(Date.now()>=sprint.end){ endSprint(); } else liveCount(); },1000)};
+ $('sprintBtn').textContent='END SHIFT'; $('sprintBtn').classList.add('live');
+ toast('Shift started — '+mins+' minutes. The count is kept.');
+ if($('ta')) $('ta').focus();
+};
+function endSprint(){
+ clearInterval(sprint.tick);
+ const w=$('ta')? Math.max(0,wc($('ta').value)-sprint.startW):0;
+ sprint=null; meta.sprints++; store.set('ns:meta',JSON.stringify(meta));
+ $('sprintBtn').textContent='START A SHIFT'; $('sprintBtn').classList.remove('live');
+ $('sprintInfo').textContent='';
+ toast('Shift over — +'+w+' words. '+camp().verb);
+ $('sprints').textContent=meta.sprints; checkAch(0,-1); saveActive(false);
+}
+
+/* ---------------- export ---------------- */
+$('exCancel').onclick=()=>$('exportModal').classList.remove('show');
+$('bk').onclick=()=>{ try{ const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify({meta,texts})],{type:'application/json'}));
+  a.download='night_shifts_save.json'; a.click(); toast('Game backed up. Keep that file.'); }
+ catch(e){ toast('Backup failed \u2014 use Bind & sign instead.'); } };
+$('rs').onclick=()=>$('rsFile').click();
+$('rsFile').onchange=async (ev)=>{ const f=ev.target.files[0]; if(!f) return;
+ try{ const j=JSON.parse(await f.text());
+   if(j.meta) meta={...meta,...j.meta}; if(j.texts) texts=j.texts;
+   await store.set('ns:meta',JSON.stringify(meta));
+   for(const c of ['sf','un']) for(const n in texts[c]) await store.set(chKey(c,n), texts[c][n]);
+   $('exportModal').classList.remove('show'); render(); toast('Restored. The count is kept.'); }
+ catch(e){ toast('Could not read that file.'); } };
+$('exGo').onclick=async ()=>{
+ const name=$('byline').value.trim()||'[Your Name]';
+ meta.byline=name; await store.set('ns:meta',JSON.stringify(meta));
+ if(name!=='[Your Name]') award('void','VOID UNTIL SIGNED');
+ const C=camp(); let out=C.title+'\nby '+name+'\n\n';
+ C.ch.forEach(([n,t])=>{ const body=(texts[meta.camp][n]||'').trim();
+   out+=(meta.camp==='sf'? n+'.' : 'CHAPTER '+(n<10?'0':'')+n)+'\n'+t+'\n\n'+(body||'[unwritten]')+'\n\n\n'; });
+ out+='THE END\n';
+ $('exportModal').classList.remove('show');
+ shareText(out, C.title.replace(/\s+/g,'_')+'_draft.txt');
+ toast('Bound & signed. '+C.verb);
+};
+
+/* ---------------- campaign switch ---------------- */
+$('campSF').onclick=()=>switchCamp('sf');
+$('campUN').onclick=()=>switchCamp('un');
+async function switchCamp(c){ if(meta.camp===c) return; await saveActive(false);
+ meta.camp=c; await store.set('ns:meta',JSON.stringify(meta));
+ document.body.classList.remove('editing'); render(); }
+
+
+/* ---------- iOS-safe share ---------- */
+async function shareText(out, fname){
+ let copied=false;
+ try{ await navigator.clipboard.writeText(out); copied=true; }catch(e){}
+ try{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([out],{type:'text/plain'}));
+   a.download=fname; a.click(); }catch(e){}
+ document.getElementById('shText').value=out;
+ document.getElementById('shMsg').textContent = copied
+   ? 'Copied to clipboard (a file download was also attempted). If your device blocked either, the text below is selectable.'
+   : 'Clipboard was blocked here \u2014 use the Copy button, or long-press the text below.';
+ document.getElementById('shModal').classList.add('show');
+}
+document.getElementById('shClose').onclick=()=>document.getElementById('shModal').classList.remove('show');
+document.getElementById('shCopy').onclick=()=>{ const t=document.getElementById('shText');
+ t.focus(); t.select(); try{ t.setSelectionRange(0, 999999); }catch(e){}
+ let ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+ toast(ok? 'Copied.' : 'Long-press the text to copy manually.'); };
+
+/* ---------------- boot ---------------- */
+(async function boot(){
+ try{ const m=await store.get('ns:meta'); if(m) meta={...meta, ...JSON.parse(m)}; }catch(e){}
+ const loads=[];
+ for(const c of ['sf','un']) for(const [n] of CAMPS[c].ch)
+   loads.push(store.get(chKey(c,n)).then(v=>{ if(v) texts[c][n]=v; }).catch(()=>{}));
+ await Promise.all(loads);
+ render();
+})();
+</script>
+</body>
+</html>

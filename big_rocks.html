@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#131124">
+
+<title>Big Rocks — a time game</title>
+<style>
+:root{ --dusk:#1A1730; --dusk2:#131124; --glass:#262243; --pale:#E8E2F2; --slate:#9A92B4;
+  --sand:#E2B96F; --rock:#7C7490; --pebble:#B5A8CC; --candle:#F2DFA7; --red:#C75D5D; --good:#7FB59A; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0; background:radial-gradient(900px 500px at 50% -80px,#241F45,var(--dusk) 55%,var(--dusk2));
+  color:var(--pale); font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; min-height:100%;}
+button{font:inherit; cursor:pointer; border:none; border-radius:5px;}
+button,select,input,textarea{touch-action:manipulation}
+.disp{font-family:'Optima','Candara','Trebuchet MS',sans-serif; letter-spacing:.12em; text-transform:uppercase;}
+.mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace; font-variant-numeric:tabular-nums;}
+header{position:sticky; top:0; z-index:40; background:linear-gradient(var(--dusk2) 78%,transparent); padding:10px 14px 6px;}
+.strip{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+.brand{font-size:14px;} .brand b{color:var(--sand)}
+.meters{margin-left:auto; display:flex; gap:13px; font-size:12px; color:var(--slate); align-items:baseline;}
+.meters .v{color:var(--pale)}
+.jarbtn{background:var(--glass); color:var(--slate); padding:6px 10px; font-size:11px;}
+.banner{display:none; background:#3a3050; font-size:12.5px; padding:8px 12px; border-radius:5px; margin:8px 14px 0; max-width:1100px;}
+.wrap{display:grid; grid-template-columns:1fr; gap:14px; padding:12px 14px 120px; max-width:1100px; margin:0 auto;}
+@media(min-width:920px){ .wrap{grid-template-columns:1fr 320px; align-items:start;} }
+.blocks{display:flex; flex-direction:column; gap:8px;}
+.blk{display:flex; align-items:center; gap:9px; background:var(--glass); border-radius:6px; padding:9px 10px;
+  border-left:4px solid var(--rock);}
+.blk.tp1{border-left-color:var(--rock)} .blk.tp2{border-left-color:var(--pebble)} .blk.tp3{border-left-color:var(--sand)}
+.blk.run{outline:2px solid var(--candle); background:#2C2750;}
+.blk.done{opacity:.55}
+.blk .go{width:42px; height:42px; border-radius:50%; background:#1E1A38; color:var(--candle); font-size:16px; flex:0 0 auto;}
+.blk.run .go{background:var(--candle); color:#241f08;}
+.blk .tt{flex:1; min-width:0;}
+.blk .tt .t{font-size:14.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.blk .tt .m{font-size:11px; color:var(--slate);}
+.blk .deep{font-size:10px; padding:3px 7px; border-radius:9px; background:#1E1A38; color:var(--slate);}
+.blk .deep.on{background:var(--candle); color:#241f08;}
+.blk .x{color:var(--slate); background:none; padding:4px 6px;}
+.carry{font-size:10px; color:var(--sand);}
+.empty{color:var(--slate); font-style:italic; padding:18px 6px; text-align:center;}
+.rail{display:flex; flex-direction:column; gap:12px;}
+.panel{background:#15122A; border:1px solid #0008; border-radius:8px; padding:12px;}
+.panel h3{margin:0 0 8px; font-size:11px; color:var(--slate); letter-spacing:.14em;}
+.jarwrap{display:flex; gap:12px; align-items:flex-end;}
+.jarstats{font-size:12px; color:var(--slate); flex:1;}
+.jarstats .v{color:var(--pale)}
+.jarstats div{padding:2px 0}
+.ovf{color:var(--red); font-weight:600;}
+.row2{display:flex; justify-content:space-between; font-size:12.5px; color:var(--slate); padding:3px 0;}
+.row2 .v{color:var(--pale)}
+.mirror{font-size:12.5px; color:var(--sand); margin-top:6px; font-style:italic;}
+.hist{font-size:11.5px; color:var(--slate);}
+.hist .v{color:var(--pale)}
+.ach{display:flex; flex-wrap:wrap; gap:6px;}
+.ach span{font-size:10.5px; padding:4px 8px; border-radius:10px; background:#1E1A38; color:var(--slate); border:1px solid #0006;}
+.ach span.got{color:#241f08; background:var(--sand);}
+.btnrow{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+.btnrow button{flex:1; padding:10px; background:#1E1A38; color:var(--pale);}
+.btnrow .primary{background:var(--sand); color:#241f08;}
+.foot{position:fixed; left:0; right:0; bottom:0; z-index:50; background:linear-gradient(transparent,var(--dusk2) 35%);
+  padding:10px 14px calc(12px + env(safe-area-inset-bottom));}
+.addbar,.runbar{max-width:1100px; margin:0 auto; display:flex; gap:6px; align-items:center;}
+.addbar input,.addbar select{background:var(--glass); border:1px solid #0008; color:var(--pale); padding:12px 8px; border-radius:5px; font:inherit; min-width:0;}
+.addbar .ti{flex:1} .addbar .mi{flex:0 1 78px} .addbar select{flex:0 1 104px}
+.addbar button{background:var(--sand); color:#241f08; padding:0 16px;}
+.runbar{background:#2C2750; border:1px solid var(--candle); border-radius:8px; padding:9px 12px; display:none;}
+body.running .runbar{display:flex} body.running .addbar{display:none}
+.runbar .rt{flex:1; min-width:0}
+.runbar .rt .t{font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.runbar .rt .m{font-size:11px; color:var(--slate)}
+.runbar .clock{font-size:20px; color:var(--candle);}
+.runbar button{background:var(--candle); color:#241f08; padding:11px 14px;}
+.runbar .pause{background:#1E1A38; color:var(--pale);}
+.toast{position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:80; background:var(--sand); color:#241f08;
+  padding:10px 16px; border-radius:5px; font-size:14px; box-shadow:0 6px 24px #000a; opacity:0; pointer-events:none; transition:opacity .3s; max-width:90vw;}
+.toast.show{opacity:1}
+.modal{position:fixed; inset:0; background:#000a; z-index:90; display:none; align-items:center; justify-content:center; padding:18px;}
+.modal.show{display:flex}
+.box{background:#1E1A38; border:1px solid #0009; border-radius:8px; padding:18px; max-width:440px; width:100%;}
+.box h3{margin:0 0 4px; font-size:16px;}
+.box p{font-size:12.5px; color:var(--slate); margin:4px 0 12px;}
+.box .row{display:flex; gap:8px; flex-wrap:wrap;}
+.box .row button{flex:1; padding:11px; background:#262243; color:var(--pale);}
+.box .row .primary{background:var(--sand); color:#241f08;}
+svg text{font-family:inherit}
+</style>
+</head>
+<body>
+<header>
+  <div class="strip">
+    <div class="brand disp"><b>BIG ROCKS</b> · a time game</div>
+    <div class="meters">
+      <span class="disp" id="rank">—</span>
+      <span>shutdowns <span class="v" id="streak">0</span>d</span>
+      <span><span class="v" id="focus">0</span> focused min</span>
+      <button class="jarbtn" id="jarSet">jar: <span id="jarSize">6h</span> ✎</button>
+    </div>
+  </div>
+  <div class="banner" id="banner"></div>
+</header>
+
+<div class="wrap">
+  <div>
+    <div class="blocks" id="blocks"></div>
+  </div>
+  <div class="rail">
+    <div class="panel"><h3 class="disp">THE JAR — rocks before sand</h3>
+      <div class="jarwrap"><svg id="jar" width="120" height="172" viewBox="0 0 120 172" aria-label="day jar"></svg>
+      <div class="jarstats" id="jarstats"></div></div>
+    </div>
+    <div class="panel"><h3 class="disp">TODAY</h3><div id="today"></div>
+      <div class="mirror" id="mirror"></div>
+      <div class="btnrow"><button class="primary disp" id="shutdown">SHUTDOWN RITUAL</button><button class="disp" id="ledger">TIME LEDGER</button></div>
+      <div class="btnrow"><button id="bk">Back up</button><button id="rs">Restore</button>
+      <input type="file" id="rsFile" accept=".json,application/json" style="display:none"></div>
+    </div>
+    <div class="panel"><h3 class="disp">LAST SEVEN SUNSETS</h3><div class="hist" id="hist"></div></div>
+    <div class="panel"><h3 class="disp">ACHIEVEMENTS</h3><div class="ach" id="achs"></div>
+      <div class="hist" style="margin-top:8px">Saves live only in your storage here. Single spotlight, honest minutes.</div></div>
+  </div>
+</div>
+
+<div class="foot">
+  <div class="addbar">
+    <input class="ti" id="nT" placeholder="New block…" maxlength="60">
+    <select id="nTy"><option value="1">Rock</option><option value="2" selected>Pebble</option><option value="3">Sand</option></select>
+    <input class="mi mono" id="nM" inputmode="numeric" placeholder="min">
+    <button class="disp" id="nGo">ADD</button>
+  </div>
+  <div class="runbar">
+    <div class="rt"><div class="t" id="rT">—</div><div class="m" id="rM"></div></div>
+    <div class="clock mono" id="rC">00:00</div>
+    <button class="pause" id="rPause">Pause</button>
+    <button id="rDone">Done</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal" id="sdModal"><div class="box">
+  <h3 class="disp">Shutdown ritual</h3>
+  <p id="sdInfo"></p>
+  <div class="row"><button class="primary" id="sdGo">Close the day — carry leftovers</button></div>
+  <div class="row" style="margin-top:8px"><button id="sdCancel">Not yet</button></div>
+</div></div>
+
+<div class="modal" id="shModal"><div class="box">
+<h3>Export</h3><p id="shMsg" style="font-size:12.5px"></p>
+<textarea id="shText" readonly style="width:100%;min-height:170px;background:#101418;color:#e8e8e8;border:1px solid #0008;border-radius:5px;padding:10px;font-family:ui-monospace,Menlo,monospace;font-size:12px"></textarea>
+<div style="display:flex;gap:8px;margin-top:10px"><button id="shCopy" style="flex:1;padding:11px;background:#cfcfcf;color:#222;border-radius:5px">Copy</button><button id="shClose" style="flex:1;padding:11px;background:#3a3a3a;color:#ddd;border-radius:5px">Close</button></div>
+</div></div>
+<div class="modal" id="askModal"><div class="box">
+<h3 id="askTitle">Question</h3>
+<input id="askInput" style="width:100%;padding:12px;font:inherit;font-size:16px;background:#101418;color:#eee;border:1px solid #0008;border-radius:5px;margin-bottom:10px">
+<div style="display:flex;gap:8px"><button id="askGo" style="flex:1;padding:11px;background:#cfcfcf;color:#222;border-radius:5px">OK</button><button id="askCancel" style="flex:1;padding:11px;background:#3a3a3a;color:#ddd;border-radius:5px">Cancel</button></div>
+</div></div>
+<script>
+/* ---------- storage: claude -> localStorage -> memory ---------- */
+let mem={};
+const HASC = typeof window!=='undefined' && !!window.storage;
+const HASLS = (()=>{ if(HASC) return false; try{ localStorage.setItem('__br','1'); localStorage.removeItem('__br'); return true; }catch(e){ return false; } })();
+const store={
+ async get(k){ if(HASC){ try{ const r=await window.storage.get(k); return r?r.value:null; }catch(e){ return null; } }
+   if(HASLS) return localStorage.getItem(k); return (k in mem)?mem[k]:null; },
+ async set(k,v){ if(HASC){ try{ const r=await window.storage.set(k,v); if(r) return true; }catch(e){} }
+   if(HASLS){ try{ localStorage.setItem(k,v); return true; }catch(e){} }
+   mem[k]=v; const b=document.getElementById('banner'); b.style.display='block';
+   b.textContent='No storage available here (private browsing?). Back up before the candle burns down.'; return false; }
+};
+
+/* ---------- state ---------- */
+let S={ meta:{xp:0, streak:0, lastSD:'', ach:{}, fud:[]},
+  day:{date:'', budget:360, sw:0, blocks:[]},   // block: {id,t,ty(1r/2p/3s),plan,acc,actual,done,deep,brk,carry}
+  hist:[], run:{id:null, start:0} };
+const RANKS=[[0,'Minute Hand'],[120,'Hour Hand'],[420,'Sundial Reader'],[1200,'Keeper of the Glass'],[3000,'Horologist']];
+const ACH=[['grain','FIRST GRAIN','complete a block'],
+ ['rocks','ROCKS FIRST','plan every rock before any sand'],
+ ['unbroken','UNBROKEN','finish a deep rock with zero pauses'],
+ ['honest','HONEST HOUR','finish within 10% of your estimate'],
+ ['mirror','THE MIRROR','10 completions — your fudge ratio exists'],
+ ['ritual','CLEAN SHUTDOWN','perform the shutdown ritual'],
+ ['seven','SEVEN SUNSETS','7-day shutdown streak'],
+ ['hourglass','HOURGLASS','1,000 focused minutes lifetime']];
+let saveTm=null, tick=null;
+const $=id=>document.getElementById(id);
+const uid=()=>Math.random().toString(36).slice(2,8);
+const today=()=>new Date().toISOString().slice(0,10);
+function persist(){ clearTimeout(saveTm); saveTm=setTimeout(()=>store.set('br:state', JSON.stringify(S)), 450); }
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2400); }
+function award(id,name){ if(S.meta.ach[id]) return; S.meta.ach[id]=1; persist(); toast('Achievement — '+name); }
+function rank(){ let r=RANKS[0][1]; for(const [th,n] of RANKS) if(S.meta.xp>=th) r=n; return r; }
+function fudge(){ const f=S.meta.fud; if(f.length<3) return null; return f.reduce((a,b)=>a+b,0)/f.length; }
+function blk(id){ return S.day.blocks.find(b=>b.id===id); }
+function elapsedSec(b){ return b.acc + (S.run.id===b.id ? Math.floor((Date.now()-S.run.start)/1000) : 0); }
+function mmss(s){ const m=Math.floor(s/60), x=s%60; return (m<10?'0':'')+m+':'+(x<10?'0':'')+x; }
+
+/* ---------- day handling ---------- */
+function ensureDay(){ const d=today();
+ if(S.day.date!==d && S.day.date!==''){ /* day rolled without shutdown: soft-carry silently */ }
+ if(!S.day.date){ S.day.date=d; }
+}
+
+/* ---------- mutations ---------- */
+function addBlock(t,ty,plan){
+ if(!t || plan<=0){ toast('A block needs a name and minutes.'); return; }
+ const used=S.day.blocks.reduce((s,b)=>s+b.plan,0);
+ const sandIn=S.day.blocks.some(b=>b.ty===3);
+ if(ty===1 && sandIn) toast('Sand went in first \u2014 the rock may not fit. The jar doesn\u2019t lie.');
+ if(used+plan>S.day.budget) toast('The jar overflows by '+(used+plan-S.day.budget)+'m. Overcommitment, made visible.');
+ S.day.blocks.push({id:uid(), t, ty, plan, acc:0, actual:0, done:false, deep:false, brk:0});
+ checkRocksFirst(); persist(); render(); }
+function checkRocksFirst(){
+ const bs=S.day.blocks; if(!bs.some(b=>b.ty===1) || !bs.some(b=>b.ty===3)) return;
+ let lastRock=-1, firstSand=99;
+ bs.forEach((b,i)=>{ if(b.ty===1) lastRock=Math.max(lastRock,i); if(b.ty===3) firstSand=Math.min(firstSand,i); });
+ if(lastRock<firstSand) award('rocks','ROCKS FIRST'); }
+function startBlock(id){
+ const b=blk(id); if(!b||b.done) return;
+ if(S.run.id===id){ pauseRun(true); return; }
+ if(S.run.id){ const prev=blk(S.run.id);
+   if(prev){ prev.acc=elapsedSec(prev); prev.brk++; S.day.sw++; toast('Switched \u2014 that\u2019s '+S.day.sw+' today. Switches cost.'); } }
+ S.run={id, start:Date.now()};
+ persist(); render(); }
+function pauseRun(manual){
+ const b=blk(S.run.id); if(b){ b.acc=elapsedSec(b); if(manual){ b.brk++; } }
+ S.run={id:null,start:0}; persist(); render(); }
+function doneRun(){
+ const b=blk(S.run.id); if(!b) return;
+ b.acc=elapsedSec(b); S.run={id:null,start:0};
+ b.done=true; b.actual=Math.max(1, Math.round(b.acc/60));
+ S.meta.xp+=b.actual;
+ const ratio=b.actual/b.plan;
+ S.meta.fud.push(ratio); if(S.meta.fud.length>20) S.meta.fud.shift();
+ award('grain','FIRST GRAIN');
+ if(Math.abs(ratio-1)<=0.10) award('honest','HONEST HOUR');
+ if(S.meta.fud.length>=10) award('mirror','THE MIRROR');
+ if(b.deep && b.ty===1 && b.brk===0) award('unbroken','UNBROKEN');
+ if(S.meta.xp>=1000) award('hourglass','HOURGLASS');
+ toast('Done \u2014 '+b.actual+'m against a plan of '+b.plan+'m.');
+ persist(); render(); }
+function delBlock(id){ if(S.run.id===id) pauseRun(false);
+ S.day.blocks=S.day.blocks.filter(b=>b.id!==id); persist(); render(); }
+
+/* ---------- shutdown ---------- */
+function shutdown(){
+ if(S.run.id) pauseRun(false);
+ const bs=S.day.blocks;
+ const done=bs.filter(b=>b.done), undone=bs.filter(b=>!b.done);
+ const fmin=done.reduce((s,b)=>s+b.actual,0);
+ S.hist.push({d:S.day.date||today(), done:done.length, total:bs.length, fmin, sw:S.day.sw});
+ if(S.hist.length>30) S.hist.shift();
+ const d=today();
+ if(S.meta.lastSD!==d){ const y=new Date(Date.now()-86400000).toISOString().slice(0,10);
+   S.meta.streak=(S.meta.lastSD===y)? S.meta.streak+1 : 1; S.meta.lastSD=d; }
+ award('ritual','CLEAN SHUTDOWN');
+ if(S.meta.streak>=7) award('seven','SEVEN SUNSETS');
+ S.day={date:today(), budget:S.day.budget, sw:0,
+   blocks:undone.map(b=>({...b, acc:0, brk:0, carry:true}))};
+ persist(); render();
+ toast('Day closed. '+undone.length+' block'+(undone.length===1?'':'s')+' carried \u2014 honestly.'); }
+
+/* ---------- jar ---------- */
+function drawJar(){
+ const svg=$('jar'); const W=120, top=26, bot=164, L=16, R=104;
+ const innerH=bot-top, budget=S.day.budget;
+ let html='<defs><clipPath id="jc"><path d="M30 18 L30 30 Q16 40 16 56 L16 148 Q16 164 32 164 L88 164 Q104 164 104 148 L104 56 Q104 40 90 30 L90 18 Z"/></clipPath></defs>';
+ html+='<g clip-path="url(#jc)">';
+ let y=bot;
+ S.day.blocks.forEach(b=>{
+   const h=Math.max(3, innerH*b.plan/budget);
+   const op=b.done? .4 : 1;
+   const ov=(y-h)<top;
+   if(b.ty===3){ html+='<rect x="16" y="'+(y-h)+'" width="88" height="'+h+'" fill="'+(ov?'#C75D5D':'#E2B96F')+'" opacity="'+(op*.92)+'"/>';
+     for(let i=0;i<Math.min(14,Math.round(h/3));i++){ html+='<circle cx="'+(20+Math.random()*80)+'" cy="'+(y-Math.random()*h)+'" r="1.1" fill="#a87f3a" opacity="'+op+'"/>'; } }
+   else if(b.ty===2){ const n=Math.max(1,Math.round(h/10));
+     for(let i=0;i<n;i++){ html+='<circle cx="'+(28+((i*37)%64))+'" cy="'+(y-6-i*(h/n))+'" r="7.5" fill="'+(ov?'#C75D5D':'#B5A8CC')+'" opacity="'+op+'"/>'; } }
+   else { html+='<ellipse cx="60" cy="'+(y-h/2)+'" rx="38" ry="'+Math.max(8,h/2-1)+'" fill="'+(ov?'#C75D5D':'#7C7490')+'" opacity="'+op+'"/>'
+     +'<ellipse cx="48" cy="'+(y-h/2-3)+'" rx="10" ry="4" fill="#ffffff22"/>'; }
+   y-=h; });
+ html+='</g>';
+ html+='<path d="M30 18 L30 30 Q16 40 16 56 L16 148 Q16 164 32 164 L88 164 Q104 164 104 148 L104 56 Q104 40 90 30 L90 18 Z" fill="none" stroke="#CFC6E6" stroke-width="2.5" opacity=".85"/>';
+ html+='<rect x="26" y="12" width="68" height="7" rx="3" fill="none" stroke="#CFC6E6" stroke-width="2.5" opacity=".85"/>';
+ svg.innerHTML=html;
+ const used=S.day.blocks.reduce((s,b)=>s+b.plan,0);
+ const ovf=used-budget;
+ $('jarstats').innerHTML='<div>committed <span class="v mono">'+used+'m</span> of <span class="v mono">'+budget+'m</span></div>'+
+   '<div>rocks <span class="v">'+S.day.blocks.filter(b=>b.ty===1).length+'</span> \u00B7 pebbles <span class="v">'+S.day.blocks.filter(b=>b.ty===2).length+'</span> \u00B7 sand <span class="v">'+S.day.blocks.filter(b=>b.ty===3).length+'</span></div>'+
+   (ovf>0? '<div class="ovf">overflow +'+ovf+'m \u2014 the jar doesn\u2019t lie</div>' : '<div>room left <span class="v mono">'+(-ovf)+'m</span></div>');
+}
+
+/* ---------- render ---------- */
+function render(){
+ ensureDay();
+ $('rank').textContent=rank(); $('streak').textContent=S.meta.streak;
+ $('focus').textContent=S.meta.xp; $('jarSize').textContent=(S.day.budget/60).toFixed(S.day.budget%60?1:0)+'h';
+ document.body.classList.toggle('running', !!S.run.id);
+
+ const wrap=$('blocks'); wrap.innerHTML='';
+ if(!S.day.blocks.length) wrap.innerHTML='<div class="empty">An empty jar. Add the rocks first \u2014 the big things that must happen \u2014 then pebbles, then sand.</div>';
+ S.day.blocks.forEach(b=>{
+   const d=document.createElement('div'); d.className='blk tp'+b.ty+(S.run.id===b.id?' run':'')+(b.done?' done':'');
+   const sec=elapsedSec(b);
+   d.innerHTML='<button class="go">'+(b.done?'\u2713':(S.run.id===b.id?'\u275A\u275A':'\u25B6'))+'</button>'+
+     '<div class="tt"><div class="t">'+(b.carry?'<span class="carry">\u21BB </span>':'')+b.t.replace(/</g,'&lt;')+'</div>'+
+     '<div class="m mono">'+(b.done? b.actual+'m actual / '+b.plan+'m plan' : mmss(sec)+' / '+b.plan+'m'+(b.brk?' \u00B7 '+b.brk+' pause'+(b.brk>1?'s':''):''))+'</div></div>'+
+     (b.ty===1? '<button class="deep'+(b.deep?' on':'')+'">DEEP</button>':'')+
+     '<button class="x">\u2715</button>';
+   d.querySelector('.go').onclick=()=>{ if(!b.done) startBlock(b.id); };
+   const dp=d.querySelector('.deep'); if(dp) dp.onclick=()=>{ b.deep=!b.deep; persist(); render(); };
+   d.querySelector('.x').onclick=()=>delBlock(b.id);
+   wrap.appendChild(d); });
+
+ drawJar();
+ const done=S.day.blocks.filter(b=>b.done);
+ $('today').innerHTML='<div class="row2"><span>blocks done</span><span class="v mono">'+done.length+' / '+S.day.blocks.length+'</span></div>'+
+   '<div class="row2"><span>focused minutes</span><span class="v mono">'+done.reduce((s,b)=>s+b.actual,0)+'</span></div>'+
+   '<div class="row2"><span>switches</span><span class="v mono">'+S.day.sw+'</span></div>';
+ const f=fudge();
+ $('mirror').textContent = f===null? 'The mirror needs a few finished blocks before it can tell you about your hours.'
+   : 'The mirror: your minutes run \u00D7'+f.toFixed(2)+' lately \u2014 your \u201C30\u201D is really ~'+Math.round(30*f)+'.';
+ $('hist').innerHTML = S.hist.length? S.hist.slice(-7).map(h=>'<div>'+h.d+' \u2014 <span class="v">'+h.done+'/'+h.total+'</span> blocks \u00B7 <span class="v">'+h.fmin+'</span>m \u00B7 '+h.sw+' switches</div>').join('')
+   : 'No sunsets logged yet. The streak counts shutdowns, not busyness.';
+ $('achs').innerHTML=ACH.map(([id,n,d])=>'<span class="'+(S.meta.ach[id]?'got':'')+'" title="'+d+'">'+n+'</span>').join('');
+
+ if(S.run.id){ const b=blk(S.run.id);
+   $('rT').textContent=b.t; $('rM').textContent=b.plan+'m planned'+(b.deep?' \u00B7 DEEP':'');
+   $('rC').textContent=mmss(elapsedSec(b)); }
+ if(tick) clearInterval(tick);
+ if(S.run.id){ tick=setInterval(()=>{ const b=blk(S.run.id); if(!b){clearInterval(tick);return;}
+   $('rC').textContent=mmss(elapsedSec(b));
+   const row=document.querySelector('.blk.run .m'); if(row) row.textContent=mmss(elapsedSec(b))+' / '+b.plan+'m'+(b.brk?' \u00B7 '+b.brk+' pauses':''); },1000); }
+}
+
+/* ---------- wiring ---------- */
+$('nGo').onclick=()=>{ const t=$('nT').value.trim(); const ty=parseInt($('nTy').value,10);
+ let m=parseInt($('nM').value,10); if(!m||m<=0) m=(ty===1?90:ty===2?30:10);
+ addBlock(t,ty,m); $('nT').value=''; $('nM').value=''; };
+$('nT').addEventListener('keydown',e=>{ if(e.key==='Enter') $('nGo').click(); });
+$('rPause').onclick=()=>pauseRun(true);
+$('rDone').onclick=doneRun;
+$('jarSet').onclick=()=>{ ask('Jar size \u2014 intentional minutes today (you can\u2019t schedule the whole day)', S.day.budget, 'numeric', v=>{
+ const m=parseInt(v,10); if(m>=60&&m<=720){ S.day.budget=m; persist(); render(); } }); };
+$('shutdown').onclick=()=>{ const done=S.day.blocks.filter(b=>b.done).length;
+ $('sdInfo').textContent='Reviews the day, logs it to history, and carries '+(S.day.blocks.length-done)+' unfinished block(s) to tomorrow \u2014 honestly, with a \u21BB mark. The streak counts rituals, not busyness.';
+ $('sdModal').classList.add('show'); };
+$('sdGo').onclick=()=>{ $('sdModal').classList.remove('show'); shutdown(); };
+$('sdCancel').onclick=()=>$('sdModal').classList.remove('show');
+$('ledger').onclick=async ()=>{
+ let out='BIG ROCKS \u2014 TIME LEDGER \u2014 '+today()+'\n\n';
+ out+='Jar: '+S.day.budget+'m \u00B7 committed '+S.day.blocks.reduce((s,b)=>s+b.plan,0)+'m \u00B7 switches '+S.day.sw+'\n\n';
+ S.day.blocks.forEach(b=>{ out+='  ['+(b.done?'x':' ')+'] '+(b.ty===1?'ROCK  ':b.ty===2?'PEBBLE':'SAND  ')+'  '+b.t+'  \u2014 plan '+b.plan+'m'+(b.done?' / actual '+b.actual+'m':'')+(b.deep?'  (deep)':'')+(b.brk?'  pauses:'+b.brk:'')+'\n'; });
+ const f=fudge(); if(f!==null) out+='\nFudge ratio (last '+S.meta.fud.length+'): \u00D7'+f.toFixed(2)+'\n';
+ if(S.hist.length){ out+='\nLAST SUNSETS\n'; S.hist.slice(-7).forEach(h=>{ out+='  '+h.d+'  '+h.done+'/'+h.total+' blocks  '+h.fmin+'m focused  '+h.sw+' switches\n'; }); }
+ out+='\nRank: '+rank()+' \u00B7 shutdown streak '+S.meta.streak+'d \u00B7 '+S.meta.xp+' focused minutes lifetime\n';
+ shareText(out, 'big_rocks_'+today()+'.txt');
+ toast('Ledger filed.'); };
+$('bk').onclick=()=>{ try{ const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));
+  a.download='big_rocks_save.json'; a.click(); toast('Day backed up.'); }catch(e){ toast('Backup failed.'); } };
+$('rs').onclick=()=>$('rsFile').click();
+$('rsFile').onchange=async ev=>{ const f=ev.target.files[0]; if(!f) return;
+ try{ const j=JSON.parse(await f.text()); if(j.day&&j.meta){ S=j; S.run={id:null,start:0}; await store.set('br:state',JSON.stringify(S)); render(); toast('Restored.'); }
+  else toast('Not a Big Rocks save.'); }catch(e){ toast('Could not read that file.'); } };
+
+
+/* ---------- iOS-safe share ---------- */
+async function shareText(out, fname){
+ let copied=false;
+ try{ await navigator.clipboard.writeText(out); copied=true; }catch(e){}
+ try{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([out],{type:'text/plain'}));
+   a.download=fname; a.click(); }catch(e){}
+ document.getElementById('shText').value=out;
+ document.getElementById('shMsg').textContent = copied
+   ? 'Copied to clipboard (a file download was also attempted). If your device blocked either, the text below is selectable.'
+   : 'Clipboard was blocked here \u2014 use the Copy button, or long-press the text below.';
+ document.getElementById('shModal').classList.add('show');
+}
+document.getElementById('shClose').onclick=()=>document.getElementById('shModal').classList.remove('show');
+document.getElementById('shCopy').onclick=()=>{ const t=document.getElementById('shText');
+ t.focus(); t.select(); try{ t.setSelectionRange(0, 999999); }catch(e){}
+ let ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+ toast(ok? 'Copied.' : 'Long-press the text to copy manually.'); };
+
+
+/* ---------- in-page ask (no prompt popups) ---------- */
+let askCb=null;
+function ask(title, val, mode, cb){ askCb=cb; document.getElementById('askTitle').textContent=title;
+ const i=document.getElementById('askInput'); i.value=(val===undefined||val===null)?'':val; i.inputMode=mode||'text';
+ document.getElementById('askModal').classList.add('show'); setTimeout(()=>{ i.focus(); i.select(); },60); }
+document.getElementById('askGo').onclick=()=>{ document.getElementById('askModal').classList.remove('show');
+ const v=document.getElementById('askInput').value; if(askCb){ const cb=askCb; askCb=null; cb(v); } };
+document.getElementById('askCancel').onclick=()=>{ askCb=null; document.getElementById('askModal').classList.remove('show'); };
+document.getElementById('askInput').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('askGo').click(); });
+
+/* ---------- boot ---------- */
+(async function(){ try{ const v=await store.get('br:state'); if(v) S=JSON.parse(v); }catch(e){}
+ if(S.run && S.run.id && !blk(S.run.id)) S.run={id:null,start:0};
+ render(); })();
+</script>
+</body>
+</html>
